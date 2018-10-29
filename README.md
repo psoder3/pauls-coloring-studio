@@ -1,5 +1,5 @@
 # pauls-coloring-studio
-This is a project I began working on in January 2018 (originally titled "Image Filters") initially propelled by the desire to develop an algorithm that could automatically colorize black and white movies. 
+This is a project I began working on in January 2018 (originally titled "Image-Filters") initially propelled by the desire to develop an algorithm that could automatically colorize black and white movies. 
 
 For a detailed description of the journey and its detours, I invite you to read this document:
 
