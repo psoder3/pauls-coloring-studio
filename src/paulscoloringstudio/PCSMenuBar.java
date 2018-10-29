@@ -5,14 +5,23 @@
  */
 package paulscoloringstudio;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 
 /**
@@ -44,6 +53,13 @@ public class PCSMenuBar extends JMenuBar {
     JMenuItem autoBorderItem;
     JMenuItem reverseBorderDirectionItem;
     
+    JMenuItem translateUp;
+    JMenuItem translateLeft;
+    JMenuItem translateDown;
+    JMenuItem translateRight;
+    
+    JMenuItem backSpace;
+    
     
     JMenuItem newImageProjectItem;
     JMenuItem newVideoProjectItem;
@@ -55,7 +71,19 @@ public class PCSMenuBar extends JMenuBar {
     JMenuItem exportVideoItem;
     JMenuItem closeItem;
     
+    JMenuItem zoomIn;
+    JMenuItem zoomOut;
+    
+    JMenuItem viewUp;
+    JMenuItem viewLeft;
+    JMenuItem viewDown;
+    JMenuItem viewRight;
+    
+    
     JMenu openRecent;
+    
+    JMenuItem basicTutorial;
+    JMenuItem aboutItem;
     
     
     PCSMenuBar(PaulsColoringStudio pColoringStudio)
@@ -128,6 +156,9 @@ public class PCSMenuBar extends JMenuBar {
         fileMenu.add(newVideoProjectItem);
         
         
+        fileMenu.addSeparator();
+
+        
         openImageProjectItem = new JMenuItem("Open Image Project");
         openImageProjectItem.addActionListener(new ActionListener() {
             @Override
@@ -148,6 +179,9 @@ public class PCSMenuBar extends JMenuBar {
         });
         fileMenu.add(openVideoProjectItem);
         
+        
+        fileMenu.addSeparator();
+
         
         openRecent = new JMenu("Open Recent");
         for (String filepath : coloringStudio.recentFiles)
@@ -177,6 +211,9 @@ public class PCSMenuBar extends JMenuBar {
         }
         fileMenu.add(openRecent);
         
+        fileMenu.addSeparator();
+        
+        
         saveProjectItem = new JMenuItem("Save Project");
         saveProjectItem.setAccelerator(KeyStroke.getKeyStroke(
                 KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
@@ -197,7 +234,7 @@ public class PCSMenuBar extends JMenuBar {
         });
         fileMenu.add(saveProjectAsItem);
         
-        
+        fileMenu.addSeparator();        
         
         exportImageItem = new JMenuItem("Export Image");
         exportImageItem.addActionListener(new ActionListener() {
@@ -219,6 +256,7 @@ public class PCSMenuBar extends JMenuBar {
         });
         fileMenu.add(exportVideoItem);
         
+        fileMenu.addSeparator();
         
         closeItem = new JMenuItem("Close");
         closeItem.addActionListener(new ActionListener() {
@@ -255,7 +293,8 @@ public class PCSMenuBar extends JMenuBar {
             }
         });
         editMenu.add(redoItem);
-        
+
+        editMenu.addSeparator();        
         
         selectPreviousObjectItem = new JMenuItem("Select Previous Object");
         selectPreviousObjectItem.setAccelerator(KeyStroke.getKeyStroke(
@@ -281,7 +320,78 @@ public class PCSMenuBar extends JMenuBar {
             }
         });
         editMenu.add(selectNextObjectItem);
+                
+        deselectItem = new JMenuItem("Deselect");
+        deselectItem.setAccelerator(KeyStroke.getKeyStroke(
+                KeyEvent.VK_U, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        deselectItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                coloringStudio.deselect();
+            }
+        });
+        editMenu.add(deselectItem);
         
+        editMenu.addSeparator();
+
+        
+        translateUp = new JMenuItem("Move up");
+        translateUp.setAccelerator(KeyStroke.getKeyStroke('w'));
+        translateUp.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.translateUp();
+            }
+        });
+        editMenu.add(translateUp);
+        
+        translateLeft = new JMenuItem("Move left");
+        translateLeft.setAccelerator(KeyStroke.getKeyStroke('a'));
+        translateLeft.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.translateLeft();
+            }
+        });
+        editMenu.add(translateLeft);
+        
+        translateDown = new JMenuItem("Move down");
+        translateDown.setAccelerator(KeyStroke.getKeyStroke('s'));
+        translateDown.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.translateDown();
+            }
+        });
+        editMenu.add(translateDown);
+        
+        translateRight = new JMenuItem("Move right");
+        translateRight.setAccelerator(KeyStroke.getKeyStroke('d'));
+        translateRight.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.translateRight();
+            }
+        });
+        editMenu.add(translateRight);
+        
+        
+        
+        
+        editMenu.addSeparator();
+        
+                
+        backSpace = new JMenuItem("Delete point");
+        backSpace.setAccelerator(KeyStroke.getKeyStroke("BACK_SPACE"));
+        backSpace.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.deletePoint();
+            }
+        });
+        editMenu.add(backSpace);
+        
+        editMenu.addSeparator();
         
         saveItem = new JMenuItem("Save Video Frame");
         saveItem.setAccelerator(KeyStroke.getKeyStroke(
@@ -294,16 +404,8 @@ public class PCSMenuBar extends JMenuBar {
         });
         editMenu.add(saveItem);
         
-        deselectItem = new JMenuItem("Deselect");
-        deselectItem.setAccelerator(KeyStroke.getKeyStroke(
-                KeyEvent.VK_U, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-        deselectItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                coloringStudio.deselect();
-            }
-        });
-        editMenu.add(deselectItem);
+        
+        editMenu.addSeparator();
         
         vertexModeItem = new JMenuItem("Vertex Mode");
         vertexModeItem.setAccelerator(KeyStroke.getKeyStroke(
@@ -359,6 +461,8 @@ public class PCSMenuBar extends JMenuBar {
             }
         });
         editMenu.add(drawItem);
+        
+        editMenu.addSeparator();
         
         findEdgesItem = new JMenuItem("Find Edges");
         findEdgesItem.setAccelerator(KeyStroke.getKeyStroke(
@@ -417,12 +521,158 @@ public class PCSMenuBar extends JMenuBar {
     
     void createViewMenuItems()
     {
+        //a group of JMenuItems
+        zoomIn = new JMenuItem("Zoom in");
+        zoomIn.setAccelerator(KeyStroke.getKeyStroke(
+                '+'));
+        zoomIn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.zoomIn();
+            }
+        });
+        viewMenu.add(zoomIn);
         
+        zoomOut = new JMenuItem("Zoom out");
+        zoomOut.setAccelerator(KeyStroke.getKeyStroke(
+                '-'));
+        zoomOut.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.zoomOut();
+            }
+        });
+        viewMenu.add(zoomOut);
+        
+        
+        viewMenu.addSeparator();
+        
+        viewUp = new JMenuItem("View up");
+        viewUp.setAccelerator(KeyStroke.getKeyStroke("UP"));
+        viewUp.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.viewUp();
+            }
+        });
+        viewMenu.add(viewUp);
+        
+        viewLeft = new JMenuItem("View left");
+        viewLeft.setAccelerator(KeyStroke.getKeyStroke("LEFT"));
+        viewLeft.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.viewLeft();
+            }
+        });
+        viewMenu.add(viewLeft);
+        
+        viewDown = new JMenuItem("View down");
+        viewDown.setAccelerator(KeyStroke.getKeyStroke("DOWN"));
+        viewDown.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.viewDown();
+            }
+        });
+        viewMenu.add(viewDown);
+        
+        viewRight = new JMenuItem("View right");
+        viewRight.setAccelerator(KeyStroke.getKeyStroke("RIGHT"));
+        viewRight.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //coloringStudio.viewRight();
+            }
+        });
+        viewMenu.add(viewRight);
     }
     
     void createHelpMenuItems()
     {
+        basicTutorial = new JMenuItem("Basic \"How-to's\"");
+        basicTutorial.setAccelerator(KeyStroke.getKeyStroke(
+                KeyEvent.VK_H, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        basicTutorial.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showInstructions();
+            }
+        });
+        helpMenu.add(basicTutorial);
         
+        aboutItem = new JMenuItem("About");
+        aboutItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showAbout();
+            }
+        });
+        helpMenu.add(aboutItem);
+    }
+    
+    
+    void showInstructions()
+    {
+        try {
+            JEditorPane editorPane= new JEditorPane();
+            editorPane.setEditable(false);
+            JScrollPane editorScrollPane = new JScrollPane(editorPane);
+            editorScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+            File file = new File("Resources" + File.separator + "help.html");
+            editorPane.setPage(file.toURI().toURL());
+            
+            JDialog helpDialog = new JDialog();
+            helpDialog.add(editorScrollPane, BorderLayout.CENTER);
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            int help_width = (int)(screenSize.getWidth()*.6);
+            int help_height = (int)(screenSize.getHeight()*.8);
+
+            helpDialog.setSize(help_width,help_height);
+            
+            double x = (screenSize.getWidth()/2) - (helpDialog.getWidth()/2);
+            double y = (screenSize.getHeight()/2) - (helpDialog.getHeight()/2);
+            helpDialog.setLocation((int)x, (int)y);
+            
+            helpDialog.setVisible(true);
+            
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(PCSMenuBar.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(PCSMenuBar.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    
+    void showAbout()
+    {
+        try {
+            JEditorPane editorPane= new JEditorPane();
+            editorPane.setEditable(false);
+            JScrollPane editorScrollPane = new JScrollPane(editorPane);
+            editorScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+            File file = new File("Resources" + File.separator + "about.html");
+            editorPane.setPage(file.toURI().toURL());
+            
+            JDialog helpDialog = new JDialog();
+            helpDialog.add(editorScrollPane, BorderLayout.CENTER);
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            int help_width = (int)(screenSize.getWidth()*.5);
+            int help_height = (int)(screenSize.getHeight()*.3);
+
+            helpDialog.setSize(help_width,help_height);
+            
+            double x = (screenSize.getWidth()/2) - (helpDialog.getWidth()/2);
+            double y = (screenSize.getHeight()/2) - (helpDialog.getHeight()/2);
+            helpDialog.setLocation((int)x, (int)y);
+            
+            helpDialog.setVisible(true);
+            
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(PCSMenuBar.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(PCSMenuBar.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
 }
