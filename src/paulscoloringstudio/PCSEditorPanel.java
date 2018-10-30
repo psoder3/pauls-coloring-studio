@@ -6,6 +6,7 @@
 package paulscoloringstudio;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
@@ -20,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -27,11 +30,13 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -47,33 +52,41 @@ public class PCSEditorPanel extends JPanel {
     String[] whichColorStrings = { "Primary Color", "Secondary Color"};
     JComboBox whichColorList = new JComboBox(whichColorStrings);
     
-
+    JPanel colorPanel;
+    JPanel frameNavigatorPanel;
+    JPanel grabFramesPanel;
     
+    JLabel hue_label;
     JSlider hue_slider;
     int hue_min = 0;
     int hue_max = 360;
     int hue_initial = 0;
     
+    JLabel sat_label;
     JSlider sat_slider;
     int sat_min = 0;
     int sat_max = 100;
     int sat_initial = 0;
     
+    JLabel val_label;
     JSlider val_slider;
     int val_min = 0;
     int val_max = 100;
     int val_initial = 100;
     
+    JLabel hue_variation_label;
     JSlider hue_var_slider;
     int hue_var_min = 0;
     int hue_var_max = 360;
     int hue_var_initial = 0;
     
+    JLabel sat_variation_label;
     JSlider sat_var_slider;
     int sat_var_min = 0;
     int sat_var_max = 100;
     int sat_var_initial = 0;
     
+    JLabel complement_label;
     JSlider complement_slider;
     int comp_min = 0;
     int comp_max = 256;
@@ -100,19 +113,23 @@ public class PCSEditorPanel extends JPanel {
     JTextField numFramesField = new JTextField(3);
     
     
-    JLabel idLbl = new JLabel("   Object id");
+    JLabel idLbl = new JLabel("   Object ID");
     JTextField idField = new JTextField(3);
     
     JLabel depthLbl = new JLabel("   Object Depth");
     JTextField depthField = new JTextField(3);
     
-    
+    JLabel frameLbl;
     
     boolean lastPressedWasBackward = false;
     ChangeListener videoSpinnerCL;
     ChangeListener framesSpinnerCL;
     ChangeListener videoSliderCL;
     ChangeListener frameSliderCL;
+    
+    
+    Rectangle rectangle;
+    
     /*
     JSlider red_slider;
     int red_min = 0;
@@ -144,10 +161,11 @@ public class PCSEditorPanel extends JPanel {
     public PCSEditorPanel(PaulsColoringStudio pColoringStudio)
     {
         super();
-        
+        colorPanel = new JPanel();
+        frameNavigatorPanel = new JPanel();
         JPanel depthPanel = new JPanel();
         depthField.setText("0");
-        idField.setText("0");
+        idField.setText("NULL");
         idField.setEditable(false);
         depthPanel.add(this.idLbl);
         depthPanel.add(this.idField);
@@ -160,13 +178,23 @@ public class PCSEditorPanel extends JPanel {
 
             @Override
             public void focusLost(FocusEvent e) {
-                coloringStudio.currentProjectState.selectedPolygon.depth = Double.parseDouble(depthField.getText());
+                double number = coloringStudio.currentProjectState.selectedPolygon.depth;
+                try
+                {
+                    number = Double.parseDouble(depthField.getText());
+                }
+                catch (NumberFormatException ex)
+                {
+                    depthField.setText(number+"");
+                }
+                coloringStudio.currentProjectState.selectedPolygon.depth = number;
                 //imageFilters.colorizeImageByLayers(); // this function takes forever
             }
         });
         
         this.coloringStudio = pColoringStudio;
-        this.setLayout(new GridLayout(13,1));
+        //this.setLayout(new GridLayout(2,1));
+        this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         
         // -----------------------
         // H S V
@@ -176,7 +204,7 @@ public class PCSEditorPanel extends JPanel {
         // Hue
         // -----------------------
         JPanel hue_panel = new JPanel();
-        JLabel hue_label = new JLabel("H");
+        hue_label = new JLabel("H");
         hue_slider = new JSlider(JSlider.HORIZONTAL,hue_min,hue_max,hue_initial);
         SpinnerModel hue_model =
         new SpinnerNumberModel(hue_initial, //initial value
@@ -208,7 +236,7 @@ public class PCSEditorPanel extends JPanel {
         // Saturation
         // -----------------------
         JPanel sat_panel = new JPanel();
-        JLabel sat_label = new JLabel("S");
+        sat_label = new JLabel("S");
         sat_slider = new JSlider(JSlider.HORIZONTAL,sat_min,sat_max,sat_initial);
         SpinnerModel sat_model =
         new SpinnerNumberModel(sat_initial, //initial value
@@ -240,7 +268,7 @@ public class PCSEditorPanel extends JPanel {
         // Value
         // -----------------------
         JPanel val_panel = new JPanel();
-        JLabel val_label = new JLabel("V");
+        val_label = new JLabel("V");
         val_slider = new JSlider(JSlider.HORIZONTAL,val_min,val_max,val_initial);
         SpinnerModel val_model =
         new SpinnerNumberModel(val_initial, //initial value
@@ -273,7 +301,7 @@ public class PCSEditorPanel extends JPanel {
         // Hue Variation
         // -----------------------
         JPanel hue_variation_panel = new JPanel();
-        JLabel hue_variation_label = new JLabel("hue variation");
+        hue_variation_label = new JLabel("hue variation");
         hue_var_slider = new JSlider(JSlider.HORIZONTAL,hue_var_min,hue_var_max,hue_var_initial);
 
         SpinnerModel hue_variation_model =
@@ -318,7 +346,7 @@ public class PCSEditorPanel extends JPanel {
         // Saturation Variation
         // -----------------------
         JPanel sat_variation_panel = new JPanel();
-        JLabel sat_variation_label = new JLabel("sat variation");
+        sat_variation_label = new JLabel("sat variation");
         sat_var_slider = new JSlider(JSlider.HORIZONTAL,sat_var_min,sat_var_max,sat_var_initial);
         SpinnerModel sat_variation_model =
         new SpinnerNumberModel(sat_var_initial, //initial value
@@ -364,7 +392,7 @@ public class PCSEditorPanel extends JPanel {
         // Complementary Shadows
         // -----------------------
         JPanel complement_panel = new JPanel();
-        JLabel complement_label = new JLabel("secondary");
+        complement_label = new JLabel("secondary");
         complement_slider = new JSlider(JSlider.HORIZONTAL,comp_min,comp_max,comp_initial);
         SpinnerModel complement_model =
         new SpinnerNumberModel(comp_initial, //initial value
@@ -504,9 +532,26 @@ public class PCSEditorPanel extends JPanel {
         
         video_frame_spinner.addChangeListener(videoSpinnerCL);
         //video_frame_panel.add(video_frame_label);
-        video_frame_panel.add(video_frame_slider);
-        video_frame_panel.add(video_frame_spinner);
         
+
+        
+        numFramesField.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                try
+                {
+                    Integer.parseInt(numFramesField.getText());
+                }
+                catch (NumberFormatException ex)
+                {
+                    numFramesField.setText("5");
+                }
+            }
+        });
         numFramesField.setText("5");
         beginFramesButton.addActionListener(new ActionListener() {
             @Override
@@ -547,13 +592,26 @@ public class PCSEditorPanel extends JPanel {
             }
         });
         
-        
-        JPanel grabFramesPanel = new JPanel();
+        grabFramesPanel = new JPanel();
         grabFramesPanel.add(beginFramesButton);
         grabFramesPanel.add(numFramesField);
         
+        frameLbl = new JLabel("Frame Navigator");
+        JPanel video_slider_panel = new JPanel();
         
+        video_frame_panel.setLayout(new BoxLayout(video_frame_panel, BoxLayout.PAGE_AXIS));
+        video_slider_panel.add(video_frame_slider);
+        video_slider_panel.add(video_frame_spinner);
+        video_frame_panel.add(frameLbl);
+        video_frame_panel.add(video_slider_panel);
         
+        frameNavigatorPanel.setLayout(new GridLayout(2,1));
+        //frameNavigatorPanel.setLayout(new BoxLayout(frameNavigatorPanel, BoxLayout.PAGE_AXIS));
+
+        
+        frameNavigatorPanel.add(video_frame_panel);
+        frameNavigatorPanel.add(grabFramesPanel);
+
         /*
         // -----------------------
         // R G B
@@ -656,26 +714,71 @@ public class PCSEditorPanel extends JPanel {
         blue_panel.add(blue_spinner);
         
         */
+        rectangle = new Rectangle();
+        colorPanel.setLayout(new GridLayout(9,1));
+        colorPanel.add(whichColorList);
+        colorPanel.add(hue_panel);
+        colorPanel.add(sat_panel);
+        colorPanel.add(val_panel);
+        colorPanel.add(rectangle);
         
-        this.add(whichColorList);
-        this.add(hue_panel);
-        this.add(sat_panel);
-        this.add(val_panel);
-        this.add(new Rectangle());
+        colorPanel.add(hue_variation_panel);
+        colorPanel.add(sat_variation_panel);
         
-        this.add(hue_variation_panel);
-        this.add(sat_variation_panel);
-        
-        this.add(complement_panel);
+        colorPanel.add(complement_panel);
         //this.add(edgeBlendList);
-        this.add(depthPanel);
+        colorPanel.add(depthPanel);
         
-        this.add(new JLabel("   Frame Navigator"));
-        this.add(video_frame_panel);
-        this.add(grabFramesPanel);
+        this.add(colorPanel);
+        this.add(new JSeparator(SwingConstants.HORIZONTAL));
+        this.add(frameNavigatorPanel);
         //this.add(red_panel);
         //this.add(green_panel);
         //this.add(blue_panel);
+        this.setObjectEditorEnabled(false);
+        this.setVideoNavigationEnabled(false);
+        this.setFrameGrabEnabled(false);
+    }
+    
+    void setObjectEditorEnabled(boolean enabled)
+    {
+        this.whichColorList.setEnabled(enabled);
+        this.hue_label.setEnabled(enabled);
+        this.hue_slider.setEnabled(enabled);
+        this.hue_spinner.setEnabled(enabled);
+        this.sat_label.setEnabled(enabled);
+        this.sat_slider.setEnabled(enabled);
+        this.sat_spinner.setEnabled(enabled);
+        this.val_label.setEnabled(enabled);
+        this.val_slider.setEnabled(enabled);
+        this.val_spinner.setEnabled(enabled);
+        this.hue_variation_label.setEnabled(enabled);
+        this.hue_var_slider.setEnabled(enabled);
+        this.hue_variation_spinner.setEnabled(enabled);
+        this.sat_variation_label.setEnabled(enabled);
+        this.sat_var_slider.setEnabled(enabled);
+        this.sat_variation_spinner.setEnabled(enabled);
+        this.complement_label.setEnabled(enabled);
+        this.complement_slider.setEnabled(enabled);
+        this.complement_spinner.setEnabled(enabled);
+        this.depthLbl.setEnabled(enabled);
+        this.depthField.setEnabled(enabled);
+        this.idLbl.setEnabled(enabled);
+        this.idField.setEnabled(enabled);
+        this.rectangle.setEnabled(enabled);
+    }
+    
+    void setVideoNavigationEnabled(boolean enabled)
+    {
+        this.frameLbl.setEnabled(enabled);
+        this.video_frame_slider.setEnabled(enabled);
+        this.video_frame_spinner.setEnabled(enabled);
+    }
+    
+    void setFrameGrabEnabled(boolean enabled)
+    {
+        this.beginFramesButton.setEnabled(enabled);
+        this.numFramesField.setEnabled(enabled);
     }
     
     void swapToFrameChangeListener() {

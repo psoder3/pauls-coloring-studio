@@ -48,6 +48,7 @@ public class PCSMenuBar extends JMenuBar {
     JMenuItem dragVerticesItem;
     JMenuItem dragObjectsItem;
     JMenuItem drawItem;
+    JMenuItem applyToAllFramesItem;
     JMenuItem findEdgesItem;
     JMenuItem trackMotionItem;
     JMenuItem autoBorderItem;
@@ -214,7 +215,7 @@ public class PCSMenuBar extends JMenuBar {
         fileMenu.addSeparator();
         
         
-        saveProjectItem = new JMenuItem("Save Project");
+        saveProjectItem = new JMenuItem("Save");
         saveProjectItem.setAccelerator(KeyStroke.getKeyStroke(
                 KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         saveProjectItem.addActionListener(new ActionListener() {
@@ -232,7 +233,7 @@ public class PCSMenuBar extends JMenuBar {
                 //coloringStudio.saveProjectAs();
             }
         });
-        fileMenu.add(saveProjectAsItem);
+        //fileMenu.add(saveProjectAsItem);
         
         fileMenu.addSeparator();        
         
@@ -340,7 +341,7 @@ public class PCSMenuBar extends JMenuBar {
         translateUp.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.translateUp();
+                coloringStudio.translateUp();
             }
         });
         editMenu.add(translateUp);
@@ -350,7 +351,7 @@ public class PCSMenuBar extends JMenuBar {
         translateLeft.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.translateLeft();
+                coloringStudio.translateLeft();
             }
         });
         editMenu.add(translateLeft);
@@ -360,7 +361,7 @@ public class PCSMenuBar extends JMenuBar {
         translateDown.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.translateDown();
+                coloringStudio.translateDown();
             }
         });
         editMenu.add(translateDown);
@@ -370,7 +371,7 @@ public class PCSMenuBar extends JMenuBar {
         translateRight.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.translateRight();
+                coloringStudio.translateRight();
             }
         });
         editMenu.add(translateRight);
@@ -386,7 +387,7 @@ public class PCSMenuBar extends JMenuBar {
         backSpace.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.deletePoint();
+                coloringStudio.deletePoint();
             }
         });
         editMenu.add(backSpace);
@@ -464,7 +465,19 @@ public class PCSMenuBar extends JMenuBar {
         
         editMenu.addSeparator();
         
-        findEdgesItem = new JMenuItem("Find Edges");
+        
+        applyToAllFramesItem = new JMenuItem("Apply To All Frames");
+        applyToAllFramesItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                coloringStudio.ApplyFrameToAllFrames();
+            }
+        
+        });
+        editMenu.add(applyToAllFramesItem);
+        
+        
+        findEdgesItem= new JMenuItem("Find Edges");
         findEdgesItem.setAccelerator(KeyStroke.getKeyStroke(
                 KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         findEdgesItem.addActionListener(new ActionListener() {
@@ -524,11 +537,11 @@ public class PCSMenuBar extends JMenuBar {
         //a group of JMenuItems
         zoomIn = new JMenuItem("Zoom in");
         zoomIn.setAccelerator(KeyStroke.getKeyStroke(
-                '+'));
+                '='));
         zoomIn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.zoomIn();
+                coloringStudio.zoomIn();
             }
         });
         viewMenu.add(zoomIn);
@@ -539,7 +552,7 @@ public class PCSMenuBar extends JMenuBar {
         zoomOut.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.zoomOut();
+                coloringStudio.zoomOut();
             }
         });
         viewMenu.add(zoomOut);
@@ -552,7 +565,7 @@ public class PCSMenuBar extends JMenuBar {
         viewUp.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.viewUp();
+                coloringStudio.viewUp();
             }
         });
         viewMenu.add(viewUp);
@@ -562,7 +575,7 @@ public class PCSMenuBar extends JMenuBar {
         viewLeft.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.viewLeft();
+                coloringStudio.viewLeft();
             }
         });
         viewMenu.add(viewLeft);
@@ -572,7 +585,7 @@ public class PCSMenuBar extends JMenuBar {
         viewDown.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.viewDown();
+                coloringStudio.viewDown();
             }
         });
         viewMenu.add(viewDown);
@@ -582,7 +595,7 @@ public class PCSMenuBar extends JMenuBar {
         viewRight.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.viewRight();
+                coloringStudio.viewRight();
             }
         });
         viewMenu.add(viewRight);

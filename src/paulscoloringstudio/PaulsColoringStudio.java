@@ -154,7 +154,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     JButton saveVideoFrameButton = new JButton("Save Frame");
     JButton trackMotionButton = new JButton("Track Motion");
     JButton findEdgesButton = new JButton("Find Edges");
-    JButton colorLayersButton = new JButton("Color By Layers");
+    JButton colorLayersButton = new JButton("Recolor");
     int drawPrecision = 2;
     int dragCounter = 0;
     
@@ -162,7 +162,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     JLabel extensionLbl = new JLabel(".pmoc");
     JButton saveButton = new JButton("Save");
     JButton openButton = new JButton("Open");
-    JButton recolorPolygonsButton = new JButton("Recolor Selected Polygons");
+    JButton recolorPolygonsButton = new JButton("Recolor Selection");
     
     JButton loadVideoButton = new JButton("Load Video");
     
@@ -2940,6 +2940,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         if (LoadImage())
         {
             PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
+            
         }
     }
     
@@ -2948,6 +2949,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         if (chooseVideoFile())
         {
             PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
+            this.editorPanel.setFrameGrabEnabled(true);
+            this.editorPanel.setVideoNavigationEnabled(true);
         }
     }
     
@@ -2956,6 +2959,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         if (choosePMOC())
         {
             PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
+            
+            
         }
     }
     
@@ -2965,6 +2970,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         {
             // if success
             PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
+            this.editorPanel.setVideoNavigationEnabled(true);
         }
     }
     
@@ -2974,10 +2980,10 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 "PMOC Files (Paul's Masked Object Coloring file type)", "pmoc");
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(filter);
-        fc.setCurrentDirectory(new File(System.getProperty("user.home") 
+        /*fc.setCurrentDirectory(new File(System.getProperty("user.home") 
                 + File.separator + "NetBeansProjects" 
                 + File.separator + "ImageEditor"
-                + File.separator + "PMOCs"));
+                + File.separator + "PMOCs"));*/
         int result = fc.showOpenDialog(this);
         try
         {
@@ -3950,10 +3956,10 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Image Files", "jpg", "png", "gif", "jpeg");
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(filter);
-        fc.setCurrentDirectory(new File(System.getProperty("user.home") 
+        /*fc.setCurrentDirectory(new File(System.getProperty("user.home") 
                 + File.separator + "NetBeansProjects"
                 + File.separator + "ImageEditor"
-                + File.separator + "PMOCs"));
+                + File.separator + "PMOCs"));*/
         int result = fc.showOpenDialog(PaulsColoringStudio.this);
         try
         {
@@ -3986,6 +3992,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             
             
             //countPixelsNotWhite();
+            this.saveButton.setText("Save");
             revalidate();
             repaint();
             return true;
@@ -4758,7 +4765,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     {
         try {
             String name = selected_pmoc_file.getName();
-            selected_file = new File("PMOCs" + File.separator + name.substring(0,name.length()-5) + ".png");
+            String absolutePath = selected_pmoc_file.getAbsolutePath();
+            selected_file = new File(absolutePath.substring(0,absolutePath.length()-5) + ".png");
             selected_image = ImageIO.read(selected_file);
             image_pixels = toBufferedImage(selected_image);
             repaint();
@@ -4812,8 +4820,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 "VMOC Files ([Paul's] Video Masked Object Coloring file type)", "VMOC");
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(filter);
-        fc.setCurrentDirectory(new File(System.getProperty("user.home") 
-                + File.separator + "documents"));
+        //fc.setCurrentDirectory(new File(System.getProperty("user.home") 
+        //        + File.separator + "documents"));
         fc.showOpenDialog(PaulsColoringStudio.this);
         
         
@@ -4835,8 +4843,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 "mov");
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(filter);
-        fc.setCurrentDirectory(new File(System.getProperty("user.home") 
-                + File.separator + "documents"));
+        //fc.setCurrentDirectory(new File(System.getProperty("user.home") 
+        //        + File.separator + "documents"));
         fc.showOpenDialog(PaulsColoringStudio.this);
         
         try
@@ -5003,6 +5011,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     
     public void switchToFramesEditor(int numberFrames, int firstFrame)
     {
+        this.editorPanel.setFrameGrabEnabled(false);
+
         String absPath = ProjectDirectory + ProjectName + ".vmoc";
         if (recentFiles.contains(absPath))
         {
@@ -5020,6 +5030,9 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                            firstFrame+numberFrames, //max
                            1));
         editorPanel.repaint();
+        this.editorPanel.setVideoNavigationEnabled(true);
+        this.saveButton.setText("Save Frame");
+        this.repaint();
     }
     
     void grabNextFrames(int numberFrames, int firstFrame) {
@@ -5058,6 +5071,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                             firstFrame+numberFrames, //max
                             1));
                     changeSpinnerActionListeners();
+
                     editorPanel.repaint();
                 //} catch (IOException ex) {
                  //   Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
@@ -5937,7 +5951,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 editorPanel.complement_slider.setValue(clickedObject.complement_threshold);
                 editorPanel.edgeBlendList.setSelectedIndex(clickedObject.edgeBlendIndex);
                 editorPanel.idField.setText(clickedObject.id+"");
-
+                
+                this.editorPanel.setObjectEditorEnabled(true);
             }
             else
             {
@@ -5946,6 +5961,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 editorPanel.setSelectedColor(Color.white);
                 editorPanel.depthField.setText("0");
                 editorPanel.idField.setText("NULL");
+                
+                this.editorPanel.setObjectEditorEnabled(false);
             }
             repaint();
         }
@@ -5978,6 +5995,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             {
                 if (currentProjectState.selectedPolygon == null)
                 {
+                    this.editorPanel.setObjectEditorEnabled(true);
                     currentProjectState.selectedPolygon = new MaskedObject();
                     currentProjectState.selectedPolygon.id = ++currentObjectID;
                     currentProjectState.polygons.add(currentProjectState.selectedPolygon);
@@ -6491,59 +6509,263 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     public void keyTyped(KeyEvent e) {
     }
 
+    void zoomIn()
+    {
+        scale *= 2;
+        if (scale > 8)
+        {
+            scale = 8;
+        }
+        repaint();
+    }
+    
+    void zoomOut()
+    {
+        scale /= 2;
+        if (scale < .125)
+        {
+            scale = .125;
+        }
+        repaint();    
+    }
+    
+    void viewUp()
+    {
+        upDown--;
+        repaint();
+    }
+    
+    void viewDown()
+    {
+        upDown++;
+        repaint();
+    }
+    
+    void viewLeft()
+    {
+        leftRight--;
+        repaint();
+    }
+    
+    void viewRight()
+    {
+        leftRight++;
+        repaint();
+    }
+    
+    void translateUp()
+    {
+        if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
+        {
+            for (MaskedObject p : currentProjectState.selectedObjects)
+            {
+                for (int i = 0; i < p.polygon.npoints; i++)
+                {
+                    p.polygon.ypoints[i]--;
+                }
+                p.polygon.invalidate();
+            }
+        }
+        else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
+        {
+            for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
+            {
+                ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
+                Polygon p = currentProjectState.selectedObjects.get(i).polygon;
+                for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
+                {
+                    p.ypoints[vertList.get(j)]--;
+                }
+                p.invalidate();
+            }
+        }
+        else if (currentProjectState.selectedPolygon != null)
+        {
+            //System.out.println("Pressed UP");
+            currentProjectState.selectedPolygon.polygon.ypoints[currentProjectState.selectedVertexIndex]--;
+            //selectedVertex.y = selectedPolygon.ypoints[selectedVertexIndex];
+            currentProjectState.selectedPolygon.polygon.invalidate();
+        }
+
+        repaint();
+        return;
+    }
+    
+    void translateLeft()
+    {
+        if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
+        {
+            for (MaskedObject p : currentProjectState.selectedObjects)
+            {
+                for (int i = 0; i < p.polygon.npoints; i++)
+                {
+                    p.polygon.xpoints[i]--;
+                }
+                p.polygon.invalidate();
+            }
+        }
+        else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
+        {
+            for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
+            {
+                ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
+                Polygon p = currentProjectState.selectedObjects.get(i).polygon;
+                for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
+                {
+                    p.xpoints[vertList.get(j)]--;
+                }
+                p.invalidate();
+            }
+        }
+        else if (currentProjectState.selectedPolygon != null)
+        {
+            //System.out.println("Pressed LEFT");
+            currentProjectState.selectedPolygon.polygon.xpoints[currentProjectState.selectedVertexIndex]--;
+            //selectedVertex.x = selectedPolygon.xpoints[selectedVertexIndex];
+            currentProjectState.selectedPolygon.polygon.invalidate();
+        }
+
+        repaint();
+        return;
+    }
+    
+    void translateRight()
+    {
+        if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
+        {
+            for (MaskedObject p : currentProjectState.selectedObjects)
+            {
+                for (int i = 0; i < p.polygon.npoints; i++)
+                {
+                    p.polygon.xpoints[i]++;
+                }
+                p.polygon.invalidate();
+            }
+        }
+        else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
+        {
+            for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
+            {
+                ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
+                Polygon p = currentProjectState.selectedObjects.get(i).polygon;
+                for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
+                {
+                    p.xpoints[vertList.get(j)]++;
+                }
+                p.invalidate();
+            }
+        }
+        else if (currentProjectState.selectedPolygon != null)
+        {
+            //System.out.println("Pressed RIGHT");
+            currentProjectState.selectedPolygon.polygon.xpoints[currentProjectState.selectedVertexIndex]++;
+            //selectedVertex.x = selectedPolygon.xpoints[selectedVertexIndex];
+            currentProjectState.selectedPolygon.polygon.invalidate();
+        }
+
+        repaint();
+        return;
+    }
+    
+    void translateDown()
+    {
+        if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
+        {
+            for (MaskedObject p : currentProjectState.selectedObjects)
+            {
+                for (int i = 0; i < p.polygon.npoints; i++)
+                {
+                    p.polygon.ypoints[i]++;
+                }
+                p.polygon.invalidate();
+            }
+        }
+        else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
+        {
+            for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
+            {
+                ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
+                Polygon p = currentProjectState.selectedObjects.get(i).polygon;
+                for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
+                {
+                    p.ypoints[vertList.get(j)]++;
+                }
+                p.invalidate();
+            }
+        }
+        else if (currentProjectState.selectedPolygon != null)
+        {
+            //System.out.println("Pressed DOWN");
+            currentProjectState.selectedPolygon.polygon.ypoints[currentProjectState.selectedVertexIndex]++;
+            //selectedVertex.y = selectedPolygon.ypoints[selectedVertexIndex];
+            currentProjectState.selectedPolygon.polygon.invalidate();
+        }
+
+        repaint();
+        return;
+    }
+    
+    void deletePoint()
+    {
+        //System.out.println("Pressed Delete");
+        if (currentProjectState.selectedPolygon.polygon.npoints == 1)
+        {
+            currentProjectState.polygons.remove(currentProjectState.selectedPolygon);
+            currentProjectState.selectedPolygon = null;
+            currentProjectState.selectedVertexIndex = -1;
+            repaint();
+            return;
+        }
+        if (currentProjectState.selectedPolygon == null)
+        {
+            return;
+        }
+        for (int i = currentProjectState.selectedVertexIndex+1; i < currentProjectState.selectedPolygon.polygon.npoints; i++)
+        {
+            currentProjectState.selectedPolygon.polygon.xpoints[i-1] = currentProjectState.selectedPolygon.polygon.xpoints[i];
+            currentProjectState.selectedPolygon.polygon.ypoints[i-1] = currentProjectState.selectedPolygon.polygon.ypoints[i];
+        }
+        currentProjectState.selectedPolygon.polygon.npoints--;
+
+        if (currentProjectState.selectedPolygon.polygon.npoints-1 < currentProjectState.selectedVertexIndex)
+        {
+            currentProjectState.selectedVertexIndex--;
+        }
+        currentProjectState.selectedPolygon.polygon.invalidate();
+
+        repaint();
+    }
+    
+    
     @Override
     public void keyPressed(KeyEvent e) {
         
         if (e.getKeyCode() == KeyEvent.VK_EQUALS)
         {
             // zoom in
-            System.out.println("Zoom in");
-            scale *= 2;
-            if (scale > 8)
-            {
-                scale = 8;
-            }
-            repaint();
+            //System.out.println("Zoom in");
         }
         if (e.getKeyCode() == KeyEvent.VK_MINUS)
         {
             // zoom out
-            System.out.println("Zoom out");
-            scale /= 2;
-            if (scale < .125)
-            {
-                scale = .125;
-            }
-            repaint();
+            //System.out.println("Zoom out");
         }
         
         if (e.getKeyCode() == KeyEvent.VK_UP)
         {
             //System.out.println("Pressed UP");
-            upDown--;
-            repaint();
-            return;
         }
         if (e.getKeyCode() == KeyEvent.VK_DOWN)
         {
             //System.out.println("Pressed DOWN");
-            upDown++;
-            repaint();
-            return;
         }
         if (e.getKeyCode() == KeyEvent.VK_RIGHT)
         {
             //System.out.println("Pressed RIGHT");
-            leftRight++;
-            repaint();
-            return;
         }
         if (e.getKeyCode() == KeyEvent.VK_LEFT)
         {
             //System.out.println("Pressed LEFT");
-            leftRight--;
-            repaint();
-            return;
         }
         
         
@@ -6552,184 +6774,23 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         
         if (e.getKeyCode() == KeyEvent.VK_W)
         {
-            if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
-            {
-                for (MaskedObject p : currentProjectState.selectedObjects)
-                {
-                    for (int i = 0; i < p.polygon.npoints; i++)
-                    {
-                        p.polygon.ypoints[i]--;
-                    }
-                    p.polygon.invalidate();
-                }
-            }
-            else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
-            {
-                for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
-                {
-                    ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
-                    Polygon p = currentProjectState.selectedObjects.get(i).polygon;
-                    for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
-                    {
-                        p.ypoints[vertList.get(j)]--;
-                    }
-                    p.invalidate();
-                }
-            }
-            else if (currentProjectState.selectedPolygon != null)
-            {
-                //System.out.println("Pressed UP");
-                currentProjectState.selectedPolygon.polygon.ypoints[currentProjectState.selectedVertexIndex]--;
-                //selectedVertex.y = selectedPolygon.ypoints[selectedVertexIndex];
-                currentProjectState.selectedPolygon.polygon.invalidate();
-            }
             
-            repaint();
-            return;
         }
         if (e.getKeyCode() == KeyEvent.VK_S)
         {
             
-            if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
-            {
-                for (MaskedObject p : currentProjectState.selectedObjects)
-                {
-                    for (int i = 0; i < p.polygon.npoints; i++)
-                    {
-                        p.polygon.ypoints[i]++;
-                    }
-                    p.polygon.invalidate();
-                }
-            }
-            else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
-            {
-                for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
-                {
-                    ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
-                    Polygon p = currentProjectState.selectedObjects.get(i).polygon;
-                    for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
-                    {
-                        p.ypoints[vertList.get(j)]++;
-                    }
-                    p.invalidate();
-                }
-            }
-            else if (currentProjectState.selectedPolygon != null)
-            {
-                //System.out.println("Pressed DOWN");
-                currentProjectState.selectedPolygon.polygon.ypoints[currentProjectState.selectedVertexIndex]++;
-                //selectedVertex.y = selectedPolygon.ypoints[selectedVertexIndex];
-                currentProjectState.selectedPolygon.polygon.invalidate();
-            }
-            
-            repaint();
-            return;
         }
         if (e.getKeyCode() == KeyEvent.VK_D)
         {
             
-            if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
-            {
-                for (MaskedObject p : currentProjectState.selectedObjects)
-                {
-                    for (int i = 0; i < p.polygon.npoints; i++)
-                    {
-                        p.polygon.xpoints[i]++;
-                    }
-                    p.polygon.invalidate();
-                }
-            }
-            else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
-            {
-                for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
-                {
-                    ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
-                    Polygon p = currentProjectState.selectedObjects.get(i).polygon;
-                    for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
-                    {
-                        p.xpoints[vertList.get(j)]++;
-                    }
-                    p.invalidate();
-                }
-            }
-            else if (currentProjectState.selectedPolygon != null)
-            {
-                //System.out.println("Pressed RIGHT");
-                currentProjectState.selectedPolygon.polygon.xpoints[currentProjectState.selectedVertexIndex]++;
-                //selectedVertex.x = selectedPolygon.xpoints[selectedVertexIndex];
-                currentProjectState.selectedPolygon.polygon.invalidate();
-            }
-            
-            repaint();
-            return;
         }
         if (e.getKeyCode() == KeyEvent.VK_A)
         {
             
-            if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
-            {
-                for (MaskedObject p : currentProjectState.selectedObjects)
-                {
-                    for (int i = 0; i < p.polygon.npoints; i++)
-                    {
-                        p.polygon.xpoints[i]--;
-                    }
-                    p.polygon.invalidate();
-                }
-            }
-            else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
-            {
-                for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
-                {
-                    ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
-                    Polygon p = currentProjectState.selectedObjects.get(i).polygon;
-                    for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
-                    {
-                        p.xpoints[vertList.get(j)]--;
-                    }
-                    p.invalidate();
-                }
-            }
-            else if (currentProjectState.selectedPolygon != null)
-            {
-                //System.out.println("Pressed LEFT");
-                currentProjectState.selectedPolygon.polygon.xpoints[currentProjectState.selectedVertexIndex]--;
-                //selectedVertex.x = selectedPolygon.xpoints[selectedVertexIndex];
-                currentProjectState.selectedPolygon.polygon.invalidate();
-            }
-            
-            repaint();
-            return;
         }
         if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE)
         {
-            System.out.println("Pressed Delete");
-            if (currentProjectState.selectedPolygon.polygon.npoints == 1)
-            {
-                currentProjectState.polygons.remove(currentProjectState.selectedPolygon);
-                currentProjectState.selectedPolygon = null;
-                currentProjectState.selectedVertexIndex = -1;
-                repaint();
-                return;
-            }
-            if (currentProjectState.selectedPolygon == null)
-            {
-                return;
-            }
-            for (int i = currentProjectState.selectedVertexIndex+1; i < currentProjectState.selectedPolygon.polygon.npoints; i++)
-            {
-                currentProjectState.selectedPolygon.polygon.xpoints[i-1] = currentProjectState.selectedPolygon.polygon.xpoints[i];
-                currentProjectState.selectedPolygon.polygon.ypoints[i-1] = currentProjectState.selectedPolygon.polygon.ypoints[i];
-            }
-            currentProjectState.selectedPolygon.polygon.npoints--;
-
-            if (currentProjectState.selectedPolygon.polygon.npoints-1 < currentProjectState.selectedVertexIndex)
-            {
-                currentProjectState.selectedVertexIndex--;
-            }
-            currentProjectState.selectedPolygon.polygon.invalidate();
             
-            repaint();
         }
         //if (e.getKeyCode() == KeyEvent.VK_1 || e.getKeyCode() == KeyEvent.VK_2)
         {

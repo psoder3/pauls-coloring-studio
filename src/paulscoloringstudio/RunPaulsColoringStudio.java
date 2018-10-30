@@ -590,7 +590,7 @@ public class RunPaulsColoringStudio {
         
         
         graphic.buttons2.add(graphic.colorLayersButton);
-        graphic.buttons2.add(graphic.ApplySchemeAllFramesButton);
+        //graphic.buttons2.add(graphic.ApplySchemeAllFramesButton);
         
         //graphic.buttons2.add(graphic.PixelateButton);
         //graphic.buttons2.add(graphic.Mosaic1Button);
@@ -625,9 +625,9 @@ public class RunPaulsColoringStudio {
         }
         graphic.editorPanel = new PCSEditorPanel(graphic);
         JPanel buttonPanel = new JPanel();
-        GridLayout grid = new GridLayout(2,1);
-        buttonPanel.setLayout(grid);
-        buttonPanel.add(graphic.buttons);
+        //GridLayout grid = new GridLayout(2,1);
+        //buttonPanel.setLayout(grid);
+        //buttonPanel.add(graphic.buttons);
         buttonPanel.add(graphic.buttons2);
         graphic.frame.add(buttonPanel, BorderLayout.SOUTH);
         graphic.frame.add(graphic.editorPanel, BorderLayout.EAST);
