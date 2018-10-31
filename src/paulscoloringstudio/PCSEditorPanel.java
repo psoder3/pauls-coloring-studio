@@ -575,7 +575,7 @@ public class PCSEditorPanel extends JPanel {
                         try {
                             Files.createDirectories(Paths.get(absPath));
                             coloringStudio.ProjectName = fileToSave.getName();
-                            coloringStudio.ProjectDirectory = absPath;
+                            coloringStudio.ProjectDirectory = absPath + File.separator;
                             File vmocFile = new File(absPath + File.separator + fileToSave.getName() + ".vmoc");
                             Files.createDirectories(Paths.get(absPath+File.separator+"Video Frame PMOCs"));
                             FileWriter fw = new FileWriter(vmocFile);

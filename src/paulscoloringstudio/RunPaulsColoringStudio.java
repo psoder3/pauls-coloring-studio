@@ -47,6 +47,7 @@ public class RunPaulsColoringStudio {
         graphic.numberMosaicColumnsBox.setText("30");
         graphic.addMouseListener(graphic);
         graphic.addMouseMotionListener(graphic);
+        graphic.addMouseWheelListener(graphic);
         graphic.frame = new JFrame();
         graphic.filterList.setSelectedIndex(5);
         graphic.keyList.setSelectedIndex(0);
@@ -624,12 +625,12 @@ public class RunPaulsColoringStudio {
             }
         }
         graphic.editorPanel = new PCSEditorPanel(graphic);
-        JPanel buttonPanel = new JPanel();
+        graphic.buttonPanel = new JPanel();
         //GridLayout grid = new GridLayout(2,1);
         //buttonPanel.setLayout(grid);
         //buttonPanel.add(graphic.buttons);
-        buttonPanel.add(graphic.buttons2);
-        graphic.frame.add(buttonPanel, BorderLayout.SOUTH);
+        graphic.buttonPanel.add(graphic.buttons2);
+        graphic.frame.add(graphic.buttonPanel, BorderLayout.SOUTH);
         graphic.frame.add(graphic.editorPanel, BorderLayout.EAST);
         
         graphic.frame.setJMenuBar(graphic.menuBar);

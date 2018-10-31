@@ -66,7 +66,7 @@ public class PCSMenuBar extends JMenuBar {
     JMenuItem newVideoProjectItem;
     JMenuItem openImageProjectItem;
     JMenuItem openVideoProjectItem;
-    JMenuItem saveProjectItem;
+    public JMenuItem saveProjectItem;
     JMenuItem saveProjectAsItem;
     JMenuItem exportImageItem;
     JMenuItem exportVideoItem;
@@ -204,6 +204,7 @@ public class PCSMenuBar extends JMenuBar {
                         File selected_pmoc_file = new File(filepath);
                         coloringStudio.loadPMOC(selected_pmoc_file);
                         coloringStudio.loadPMOCImage(selected_pmoc_file);
+                        
                     }
                     repaint();
                 }
@@ -403,10 +404,10 @@ public class PCSMenuBar extends JMenuBar {
                 coloringStudio.saveVideoFrame();
             }
         });
-        editMenu.add(saveItem);
+        //editMenu.add(saveItem);
         
         
-        editMenu.addSeparator();
+        //editMenu.addSeparator();
         
         vertexModeItem = new JMenuItem("Vertex Mode");
         vertexModeItem.setAccelerator(KeyStroke.getKeyStroke(
@@ -561,7 +562,7 @@ public class PCSMenuBar extends JMenuBar {
         viewMenu.addSeparator();
         
         viewUp = new JMenuItem("View up");
-        viewUp.setAccelerator(KeyStroke.getKeyStroke("UP"));
+        //viewUp.setAccelerator(KeyStroke.getKeyStroke("UP"));
         viewUp.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -571,7 +572,7 @@ public class PCSMenuBar extends JMenuBar {
         viewMenu.add(viewUp);
         
         viewLeft = new JMenuItem("View left");
-        viewLeft.setAccelerator(KeyStroke.getKeyStroke("LEFT"));
+        //viewLeft.setAccelerator(KeyStroke.getKeyStroke("LEFT"));
         viewLeft.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -581,7 +582,7 @@ public class PCSMenuBar extends JMenuBar {
         viewMenu.add(viewLeft);
         
         viewDown = new JMenuItem("View down");
-        viewDown.setAccelerator(KeyStroke.getKeyStroke("DOWN"));
+        //viewDown.setAccelerator(KeyStroke.getKeyStroke("DOWN"));
         viewDown.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -591,7 +592,7 @@ public class PCSMenuBar extends JMenuBar {
         viewMenu.add(viewDown);
         
         viewRight = new JMenuItem("View right");
-        viewRight.setAccelerator(KeyStroke.getKeyStroke("RIGHT"));
+        //viewRight.setAccelerator(KeyStroke.getKeyStroke("RIGHT"));
         viewRight.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
