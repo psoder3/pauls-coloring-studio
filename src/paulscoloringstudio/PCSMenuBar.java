@@ -128,8 +128,75 @@ public class PCSMenuBar extends JMenuBar {
         createViewMenuItems();
         createHelpMenuItems();
         
+        setEnabledViewItems(false);
+        setEnabledOpenItems(false);
+        setEnabledManipulateVertexItems(false);
+        saveProjectAsItem.setEnabled(false);
+        this.applyToAllFramesItem.setEnabled(false);
         
         
+    }
+    
+    void setEnabledViewItems(boolean enabled)
+    {
+        zoomIn.setEnabled(enabled);
+        zoomOut.setEnabled(enabled);
+        viewUp.setEnabled(enabled);
+        viewDown.setEnabled(enabled);
+        viewRight.setEnabled(enabled);
+        viewLeft.setEnabled(enabled);
+    }
+    
+    void setEnabledManipulateVertexItems(boolean enabled)
+    {
+        translateUp.setEnabled(enabled);
+        translateDown.setEnabled(enabled);
+        translateRight.setEnabled(enabled);
+        translateLeft.setEnabled(enabled);
+        backSpace.setEnabled(enabled);
+        findEdgesItem.setEnabled(enabled);
+        if (this.coloringStudio.PROJECT_TYPE == PaulsColoringStudio.PROJECT_TYPE_IMAGE)
+        {
+            trackMotionItem.setEnabled(false);
+        }
+        else
+        {
+            trackMotionItem.setEnabled(enabled);
+        }
+    }
+    
+    void setEnabledOpenItems(boolean enabled)
+    {
+        if (coloringStudio.currentProjectState.polygons.size() <= 0)
+        {
+            selectNextObjectItem.setEnabled(false);
+            selectPreviousObjectItem.setEnabled(false);
+            deselectItem.setEnabled(false);
+        }
+        else
+        {
+            selectNextObjectItem.setEnabled(enabled);
+            selectPreviousObjectItem.setEnabled(enabled);
+            deselectItem.setEnabled(enabled);
+        }
+
+        autoBorderItem.setEnabled(enabled);
+        reverseBorderDirectionItem.setEnabled(enabled);
+        vertexModeItem.setEnabled(enabled);
+        polygonModeItem.setEnabled(enabled);
+        dragVerticesItem.setEnabled(enabled);
+        dragObjectsItem.setEnabled(enabled);
+        drawItem.setEnabled(enabled);
+        exportImageItem.setEnabled(enabled);
+        
+        if (this.coloringStudio.PROJECT_TYPE == PaulsColoringStudio.PROJECT_TYPE_IMAGE)
+        {
+            exportVideoItem.setEnabled(false);
+        }
+        else
+        {
+            exportVideoItem.setEnabled(enabled);
+        }
         
     }
     
@@ -153,7 +220,7 @@ public class PCSMenuBar extends JMenuBar {
                     if (filepath.substring(filepath.length()-4).equals("vmoc") ||
                             filepath.substring(filepath.length()-4).equals("VMOC"))
                     {
-                        PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
+                        coloringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
                         File vmocFile = new File(filepath);
                         coloringStudio.loadVideoProject(vmocFile);
                         coloringStudio.editorPanel.setVideoNavigationEnabled(true);
@@ -161,7 +228,7 @@ public class PCSMenuBar extends JMenuBar {
                     }
                     else
                     {
-                        PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
+                        coloringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
                         File selected_pmoc_file = new File(filepath);
 
                         coloringStudio.loadPMOC(selected_pmoc_file);
@@ -171,8 +238,11 @@ public class PCSMenuBar extends JMenuBar {
                         saveProjectItem.setText("Save");
                         coloringStudio.frame.setTitle(coloringStudio.ProjectName + " - Paul's Coloring Studio");
                         coloringStudio.editorPanel.setVideoNavigationEnabled(false);
-                        
+                        saveProjectAsItem.setEnabled(true);
+                        PCSMenuBar.this.applyToAllFramesItem.setEnabled(false);
                     }
+                    coloringStudio.loadedImage();
+
                     repaint();
                 }
             });
@@ -195,6 +265,10 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.newImageProject();
+                coloringStudio.loadedImage();
+                saveProjectAsItem.setEnabled(true);
+                PCSMenuBar.this.applyToAllFramesItem.setEnabled(false);
+
             }
         });
         fileMenu.add(newImageProjectItem);
@@ -206,6 +280,8 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.newVideoProject();
+                coloringStudio.loadedImage();
+                saveProjectAsItem.setEnabled(false);
             }
         });
         fileMenu.add(newVideoProjectItem);
@@ -219,6 +295,9 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.openImageProject();
+                coloringStudio.loadedImage();
+                saveProjectAsItem.setEnabled(true);
+                PCSMenuBar.this.applyToAllFramesItem.setEnabled(false);
             }
         });
         fileMenu.add(openImageProjectItem);
@@ -230,6 +309,7 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.openVideoProject();
+                coloringStudio.loadedImage();
             }
         });
         fileMenu.add(openVideoProjectItem);
@@ -334,7 +414,7 @@ public class PCSMenuBar extends JMenuBar {
             public void actionPerformed(ActionEvent e) {
                 int objectId = coloringStudio.getIndexOfSelected() - 1;
                 coloringStudio.selectObjectById(objectId);
-                
+                PCSMenuBar.this.setEnabledManipulateVertexItems(true);
             }
         });
         editMenu.add(selectPreviousObjectItem);
@@ -347,6 +427,7 @@ public class PCSMenuBar extends JMenuBar {
             public void actionPerformed(ActionEvent e) {
                 int objectId = coloringStudio.getIndexOfSelected() + 1;
                 coloringStudio.selectObjectById(objectId);
+                PCSMenuBar.this.setEnabledManipulateVertexItems(true);
             }
         });
         editMenu.add(selectNextObjectItem);
