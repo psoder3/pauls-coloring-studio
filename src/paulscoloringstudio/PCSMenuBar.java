@@ -133,6 +133,60 @@ public class PCSMenuBar extends JMenuBar {
         
     }
     
+    void initOpenRecent()
+    {
+        openRecent = new JMenu("Open Recent");
+        for (String path : coloringStudio.recentFiles)
+        {
+            JMenuItem item = new JMenuItem(path);
+            item.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String filepath = item.getText();
+                    File selected_file = new File(filepath);
+                    
+                    String file_name = selected_file.getName();
+                    coloringStudio.ProjectName = file_name.substring(0,file_name.length()-5);
+                    int pathLength = selected_file.getAbsolutePath().length();
+                    coloringStudio.ProjectDirectory = selected_file.getAbsolutePath().substring(0, pathLength - file_name.length());
+                    
+                    if (filepath.substring(filepath.length()-4).equals("vmoc") ||
+                            filepath.substring(filepath.length()-4).equals("VMOC"))
+                    {
+                        PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
+                        File vmocFile = new File(filepath);
+                        coloringStudio.loadVideoProject(vmocFile);
+                        coloringStudio.editorPanel.setVideoNavigationEnabled(true);
+                        repaint();
+                    }
+                    else
+                    {
+                        PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
+                        File selected_pmoc_file = new File(filepath);
+
+                        coloringStudio.loadPMOC(selected_pmoc_file);
+                        coloringStudio.loadPMOCImage(selected_pmoc_file);
+                        coloringStudio.addToRecentFiles("pmoc");
+                        coloringStudio.saveButton.setText("Save");
+                        saveProjectItem.setText("Save");
+                        coloringStudio.frame.setTitle(coloringStudio.ProjectName + " - Paul's Coloring Studio");
+                        coloringStudio.editorPanel.setVideoNavigationEnabled(false);
+                        
+                    }
+                    repaint();
+                }
+            });
+            openRecent.add(item);
+        }
+    }
+    
+    void updateOpenRecent()
+    {
+        for (int i = 0 ; i <  openRecent.getItemCount(); i++) {
+            JMenuItem item = openRecent.getItem(i);
+            item.setText(coloringStudio.recentFiles.get(i));
+        }
+    }
     
     void createFileMenuItems()
     {
@@ -183,34 +237,8 @@ public class PCSMenuBar extends JMenuBar {
         
         fileMenu.addSeparator();
 
+        initOpenRecent();
         
-        openRecent = new JMenu("Open Recent");
-        for (String filepath : coloringStudio.recentFiles)
-        {
-            JMenuItem item = new JMenuItem(filepath);
-            item.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if (filepath.substring(filepath.length()-4).equals("vmoc") ||
-                            filepath.substring(filepath.length()-4).equals("VMOC"))
-                    {
-                        PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
-                        File vmocFile = new File(filepath);
-                        coloringStudio.loadVideoProject(vmocFile);
-                    }
-                    else
-                    {
-                        PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
-                        File selected_pmoc_file = new File(filepath);
-                        coloringStudio.loadPMOC(selected_pmoc_file);
-                        coloringStudio.loadPMOCImage(selected_pmoc_file);
-                        
-                    }
-                    repaint();
-                }
-            });
-            openRecent.add(item);
-        }
         fileMenu.add(openRecent);
         
         fileMenu.addSeparator();
@@ -231,10 +259,10 @@ public class PCSMenuBar extends JMenuBar {
         saveProjectAsItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.saveProjectAs();
+                coloringStudio.saveProjectAs();
             }
         });
-        //fileMenu.add(saveProjectAsItem);
+        fileMenu.add(saveProjectAsItem);
         
         fileMenu.addSeparator();        
         

@@ -53,6 +53,8 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.beans.PropertyChangeListener;
 import java.io.FileNotFoundException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Stack;
@@ -93,6 +95,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     static int PROJECT_TYPE_IMAGE = 102;
     static int PROJECT_TYPE_VIDEO = 103;
     static int PROJECT_TYPE = PROJECT_TYPE_NONE;
+    
+    boolean alreadySaved = true;
     
     Click DragDownView;
     
@@ -268,6 +272,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     //private File selected_file = new File("/Users/paulsoderquist/Documents/trainingImages/jimmy-stewart-rope.jpg");
     File selected_file;// = new File("C:\\Users\\psoderquist\\Documents\\NetBeansProjects\\Image-Filters-master\\Image-Filters-master\\faveWife.png");
 
+    
     public PaulsColoringStudio() {
         //this.colorChooser = new ColorChooserButton(Color.WHITE, this);
         //Create the menu bar.
@@ -276,6 +281,29 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         menuBar = new PCSMenuBar(this);
         
         
+    }
+    
+    public void tryOpeningMostRecentProject()
+    {
+        if (this.recentFiles.isEmpty()) return;
+        
+        String filepath = this.recentFiles.get(0);
+        if (filepath.substring(filepath.length()-4).equals("vmoc") ||
+                            filepath.substring(filepath.length()-4).equals("VMOC"))
+        {
+            PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
+            File vmocFile = new File(filepath);
+            this.loadVideoProject(vmocFile);
+        }
+        else
+        {
+            PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
+            File selected_pmoc_file = new File(filepath);
+            this.editorPanel.setVideoNavigationEnabled(false);
+            this.loadPMOC(selected_pmoc_file);
+            this.loadPMOCImage(selected_pmoc_file);
+        }
+        this.frame.setTitle(ProjectName + " - Paul's Coloring Studio");
     }
     
     public void loadRecentFiles()
@@ -3019,12 +3047,19 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             
             loadPMOC(selected_pmoc_file);
             loadPMOCImage(selected_pmoc_file);
+            this.editorPanel.setVideoNavigationEnabled(false);
+            this.frame.setTitle(ProjectName + " - Paul's Coloring Studio");
+
             //success
-            ProjectName = selected_pmoc_file.getName();
+            String PMOC_Name = selected_pmoc_file.getName();
+            ProjectName = PMOC_Name.substring(0,PMOC_Name.length()-5);
+            int pathLength = selected_pmoc_file.getAbsolutePath().length();
+            ProjectDirectory = selected_pmoc_file.getAbsolutePath().substring(0, pathLength - PMOC_Name.length());
             PaulsColoringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
             this.saveButton.setText("Save");
             this.menuBar.saveProjectItem.setText("Save");
             this.frame.setTitle(ProjectName + " - Paul's Coloring Studio");
+            addToRecentFiles("pmoc");
             repaint();
             return true;
         }
@@ -3519,10 +3554,10 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         }
     }
     
-    void writeImageFile(BufferedImage imgPixels, String filename, String type)
+    void writeImageFile(BufferedImage imgPixels, String absFilename, String type)
     {
         try {
-            File outputfile = new File("PMOCs"+File.separator+filename+"."+type);
+            File outputfile = new File(absFilename+"."+type);
             ImageIO.write(imgPixels, type, outputfile);
         } catch (IOException ex) {
             Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
@@ -3594,7 +3629,14 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     {
         if (PROJECT_TYPE == PROJECT_TYPE_IMAGE)
         {
-            saveImageProject();
+            if (alreadySaved)
+            {
+                saveImageProject();
+            }
+            else
+            {
+                saveImageProjectAs();
+            }
         }
         else if (PROJECT_TYPE == PROJECT_TYPE_VIDEO)
         {
@@ -3603,11 +3645,59 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     }
     
     
+    void saveProjectAs()
+    {
+        if (PROJECT_TYPE == PROJECT_TYPE_IMAGE)
+        {
+            saveImageProjectAs();
+        }
+        else if (PROJECT_TYPE == PROJECT_TYPE_VIDEO)
+        {
+            //saveVideoProjectAs();
+        }
+    }
+    
+    void saveImageProjectAs()
+    {
+        JFileChooser fileChooser = new JFileChooser();
+
+        int userSelection = fileChooser.showSaveDialog(this.frame);
+        boolean fileExists = true;
+        while (userSelection == JFileChooser.APPROVE_OPTION && fileExists) {
+            fileExists = false;
+            File fileToSave = new File(fileChooser.getSelectedFile().getAbsolutePath()+".pmoc");
+            String absPath = fileToSave.getAbsolutePath();
+            if (Files.exists(Paths.get(absPath))) {
+                fileExists = true;
+                new AboutDialog(this.frame,"Error","A project with that name already exists in that location");
+                userSelection = fileChooser.showSaveDialog(this.frame);
+            }
+            else
+            {  
+                this.ProjectName = fileToSave.getName().substring(0,fileToSave.getName().length()-5);
+                this.ProjectDirectory = absPath.substring(0,absPath.length()-(this.ProjectName.length()+5));
+                this.frame.setTitle(ProjectName + " - Paul's Coloring Studio");
+                savePMOC(fileToSave);
+                addToRecentFiles("pmoc");
+            }
+        }
+        alreadySaved = true;
+    }
     
     void saveImageProject()
     {
-        
-        
+        String pmocPath = this.ProjectDirectory + this.ProjectName + ".pmoc";
+        File fileToSave = new File(pmocPath);
+        savePMOC(fileToSave);        
+    }
+    
+    void savePMOC(File pmocFile)
+    {
+        this.writeObjectsToPMOCFile(this.currentProjectState.polygons, pmocFile.getAbsolutePath()); 
+        String filename = pmocFile.getName().substring(0,pmocFile.getName().length()-5);
+
+        String absPath = this.ProjectDirectory + filename;
+        this.writeImageFile(this.image_pixels,absPath,"png");
     }
     
     void saveVideoFrame()
@@ -4040,8 +4130,11 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             this.saveButton.setText("Save");
             this.menuBar.saveProjectItem.setText("Save");
             this.frame.setTitle("<Untitled Image Project> - Paul's Coloring Studio");
+            this.editorPanel.setVideoNavigationEnabled(false);
+
             revalidate();
             repaint();
+            alreadySaved = false;
             return true;
         }
         catch (Exception e)
@@ -4860,6 +4953,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     int fFrame = file_in.nextInt();
                     int numFrames = file_in.nextInt();
                     switchToFramesEditor(numFrames, fFrame);
+                    this.editorPanel.setVideoNavigationEnabled(true);
+
                     return true;
                 } catch (FileNotFoundException ex) {
                     Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
@@ -4934,6 +5029,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                                0, //min
                                totalFramesInVideo, //max
                                1));
+            alreadySaved = false;
 
             /*File f = new File(ProjectDirectory + File.separator + "Video Frame PMOCs" + File.separator + Current_Movie_Name + ".vmoc");
             if (f.exists() && !f.isDirectory())
@@ -5094,12 +5190,9 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         recentFiles = truncatedList;
     }
     
-    public void switchToFramesEditor(int numberFrames, int firstFrame)
+    public void addToRecentFiles(String projectType)
     {
-        clearObjects();
-        this.editorPanel.setFrameGrabEnabled(false);
-
-        String absPath = ProjectDirectory + ProjectName + ".vmoc";
+        String absPath = ProjectDirectory + ProjectName + "." + projectType;
         if (recentFiles.contains(absPath))
         {
             recentFiles.remove(absPath);
@@ -5107,6 +5200,16 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         recentFiles.add(0,absPath);
         limitRecentFiles();
         saveRecentFiles();
+        menuBar.updateOpenRecent();
+        menuBar.repaint();
+    }
+    
+    public void switchToFramesEditor(int numberFrames, int firstFrame)
+    {
+        clearObjects();
+        this.editorPanel.setFrameGrabEnabled(false);
+
+        addToRecentFiles("vmoc");
         changeSpinnerActionListeners("frame");
         editorPanel.video_frame_slider.setMaximum(firstFrame+numberFrames);
         editorPanel.video_frame_slider.setMinimum(firstFrame+1);
@@ -7136,7 +7239,7 @@ class Click {
 
 class ProjectState {
     
-    ArrayList<MaskedObject> polygons;
+    ArrayList<MaskedObject> polygons = new ArrayList();
     MaskedObject selectedPolygon;
     int selectedVertexIndex = -1;
     int hoverVertexIndex = -1;

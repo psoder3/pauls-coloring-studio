@@ -41,7 +41,7 @@ public class RunPaulsColoringStudio {
         
 
         final PaulsColoringStudio graphic = new PaulsColoringStudio();
-        graphic.currentProjectState.polygons = new ArrayList();
+
         graphic.ShowOutlinesCheckbox.setSelected(true);
         //graphic.assembleVideoFromFrames();
         graphic.numberMosaicColumnsBox.setText("30");
@@ -498,12 +498,7 @@ public class RunPaulsColoringStudio {
         
         
         graphic.saveButton.addActionListener((ActionEvent e) -> {
-            String filename = graphic.filenameTextBox.getText();
-
-            graphic.writeObjectsToPMOCFile(graphic.currentProjectState.polygons, "PMOCs"
-                    + File.separator + filename+".pmoc"); 
-            graphic.writeImageFile(graphic.image_pixels,filename,"png");
-            
+            graphic.saveProject();
         }); 
         
         /*graphic.openButton.addActionListener((ActionEvent e) -> {
@@ -515,8 +510,8 @@ public class RunPaulsColoringStudio {
         
         
         
-        graphic.buttons2.add(graphic.filenameTextBox);
-        graphic.buttons2.add(graphic.extensionLbl);
+        //graphic.buttons2.add(graphic.filenameTextBox);
+        //graphic.buttons2.add(graphic.extensionLbl);
         graphic.buttons2.add(graphic.saveButton);
         //graphic.buttons2.add(graphic.openButton);
         
@@ -641,6 +636,9 @@ public class RunPaulsColoringStudio {
         graphic.frame.setExtendedState(graphic.frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
         graphic.frame.setVisible(true);
         
+        
+        graphic.tryOpeningMostRecentProject();
+
         //graphic.setupShortcutKeys();
         
         /*
