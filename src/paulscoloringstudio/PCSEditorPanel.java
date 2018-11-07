@@ -189,6 +189,11 @@ public class PCSEditorPanel extends JPanel {
                 }
                 coloringStudio.currentProjectState.selectedPolygon.depth = number;
                 //imageFilters.colorizeImageByLayers(); // this function takes forever
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
             }
         });
         
@@ -216,6 +221,11 @@ public class PCSEditorPanel extends JPanel {
             @Override
             public void stateChanged(ChangeEvent e) {
                 hue_spinner.setValue((int)(hue_slider.getValue()));
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
                 //calculateRGB();
                 repaint();
             }
@@ -248,6 +258,11 @@ public class PCSEditorPanel extends JPanel {
             @Override
             public void stateChanged(ChangeEvent e) {
                 sat_spinner.setValue((int)(sat_slider.getValue()));
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
                 //calculateRGB();
                 repaint();
             }
@@ -314,6 +329,11 @@ public class PCSEditorPanel extends JPanel {
             @Override
             public void stateChanged(ChangeEvent e) {
                 hue_variation_spinner.setValue((int)(hue_var_slider.getValue()));
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
                 repaint();
             }
         });
@@ -358,6 +378,11 @@ public class PCSEditorPanel extends JPanel {
             @Override
             public void stateChanged(ChangeEvent e) {
                 sat_variation_spinner.setValue((int)(sat_var_slider.getValue()));
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
                 repaint();
             }
         });
@@ -404,6 +429,11 @@ public class PCSEditorPanel extends JPanel {
             @Override
             public void stateChanged(ChangeEvent e) {
                 complement_spinner.setValue((int)(complement_slider.getValue()));
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
                 repaint();
             }
         });
@@ -523,12 +553,11 @@ public class PCSEditorPanel extends JPanel {
         framesSpinnerCL = new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                int value = (int)(video_frame_spinner.getValue());
-                pColoringStudio.setVideoFrameAlreadySaved(value);
-                video_current_value = value;
-                video_frame_slider.setValue(value);
+                updateFrame();
             }
         };
+        
+        
         
         video_frame_spinner.addChangeListener(videoSpinnerCL);
         //video_frame_panel.add(video_frame_label);
@@ -738,6 +767,15 @@ public class PCSEditorPanel extends JPanel {
         this.setObjectEditorEnabled(false);
         this.setVideoNavigationEnabled(false);
         this.setFrameGrabEnabled(false);
+    }
+    
+    
+    public void updateFrame()
+    {
+        int value = (int)(video_frame_spinner.getValue());
+        coloringStudio.setVideoFrameAlreadySaved(value);
+        video_current_value = value;
+        video_frame_slider.setValue(value);
     }
     
     void setObjectEditorEnabled(boolean enabled)

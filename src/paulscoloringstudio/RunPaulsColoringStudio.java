@@ -325,6 +325,11 @@ public class RunPaulsColoringStudio {
         
         graphic.colorLayersButton.addActionListener((ActionEvent e) -> {
             graphic.colorizeImageByLayers();
+            if (!graphic.saveButton.isEnabled())
+            {
+                graphic.setEnabledSaveButtons(true);
+                graphic.repaint();
+            }
         });
         
         graphic.GenerateTrainingArrangements.addActionListener((ActionEvent e) -> {
@@ -537,6 +542,11 @@ public class RunPaulsColoringStudio {
         graphic.recolorPolygonsButton.addActionListener(new ActionListener () {
             public void actionPerformed(ActionEvent e) {
                 graphic.recolorSelectedPolygons();
+                if (!graphic.saveButton.isEnabled())
+                {
+                    graphic.setEnabledSaveButtons(true);
+                    graphic.repaint();
+                }
                 graphic.requestFocus();
             }
         });

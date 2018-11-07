@@ -306,7 +306,6 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
             File selected_pmoc_file = new File(filepath);
             this.editorPanel.setVideoNavigationEnabled(false);
-            this.menuBar.saveProjectAsItem.setEnabled(true);
 
             setNameAndDirectory(selected_pmoc_file);
             this.loadPMOC(selected_pmoc_file);
@@ -314,6 +313,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             this.menuBar.applyToAllFramesItem.setEnabled(false);
         }
         loadedImage();
+        this.setEnabledSaveButtons(false);
+
         this.frame.setTitle(ProjectName + " - Paul's Coloring Studio");
     }
     
@@ -2997,7 +2998,10 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         if (LoadImage())
         {
             PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
-            
+            loadedImage();
+            menuBar.saveProjectAsItem.setEnabled(true);
+            menuBar.applyToAllFramesItem.setEnabled(false);
+            setEnabledSaveButtons(true);
         }
     }
     
@@ -3008,6 +3012,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
             this.editorPanel.setFrameGrabEnabled(true);
             this.editorPanel.setVideoNavigationEnabled(true);
+            loadedImage();
+            menuBar.saveProjectAsItem.setEnabled(false);
         }
     }
     
@@ -3651,6 +3657,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         {
             saveVideoFrame();
         }
+        this.setEnabledSaveButtons(false);
     }
     
     
@@ -5242,13 +5249,21 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                            firstFrame+numberFrames, //max
                            1));
         editorPanel.repaint();
+        this.editorPanel.updateFrame();
         leftRight = image_pixels.getWidth()/2;
         upDown = image_pixels.getHeight()/2;
         this.editorPanel.setVideoNavigationEnabled(true);
         this.saveButton.setText("Save Frame");
         this.menuBar.saveProjectItem.setText("Save Frame");
+        this.setEnabledSaveButtons(false);
         this.frame.setTitle(ProjectName + " - Paul's Coloring Studio");
         this.repaint();
+    }
+    
+    void setEnabledSaveButtons(boolean enabled)
+    {
+        this.saveButton.setEnabled(enabled);
+        this.menuBar.saveProjectItem.setEnabled(enabled);
     }
     
     void grabNextFrames(int numberFrames, int firstFrame) {
@@ -6145,6 +6160,11 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             MaskedObject clickedObject = pointIsContainedByObject(click.x, click.y);
             if (clickedObject != null)
             {
+                if (!saveButton.isEnabled())
+                {
+                    setEnabledSaveButtons(true);
+                    repaint();
+                }
                 menuBar.setEnabledOpenItems(true);
                 currentProjectState.selectedPolygon = clickedObject;
                 currentProjectState.selectedVertexIndex = clickedObject.polygon.npoints-1;
@@ -6201,6 +6221,11 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     currentProjectState.selectedPolygon = currentProjectState.tempAutoCompletePolygon;
                     currentProjectState.selectedVertexIndex = currentProjectState.selectedPolygon.polygon.npoints-1;
                     currentProjectState.tempAutoCompletePolygon = null;
+                    if (!saveButton.isEnabled())
+                    {
+                        setEnabledSaveButtons(true);
+                        repaint();
+                    }
                     repaint();
                     return;
                 }
@@ -6220,6 +6245,11 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                         currentProjectState.selectedPolygon.id = ++currentObjectID;
                         currentProjectState.polygons.add(currentProjectState.selectedPolygon);
                         menuBar.setEnabledOpenItems(true);
+                        if (!saveButton.isEnabled())
+                        {
+                            setEnabledSaveButtons(true);
+                            repaint();
+                        }
                         
                     }
                     if (currentProjectState.adjacentPolygon != null && currentProjectState.adjacentPolygonVertex != -1)
@@ -6227,11 +6257,21 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                         currentProjectState.selectedPolygon.polygon.addPoint(
                                 currentProjectState.adjacentPolygon.polygon.xpoints[currentProjectState.adjacentPolygonVertex],
                                 currentProjectState.adjacentPolygon.polygon.ypoints[currentProjectState.adjacentPolygonVertex]);
+                        if (!saveButton.isEnabled())
+                        {
+                            setEnabledSaveButtons(true);
+                            repaint();
+                        }
 
                     }
                     else
                     {
                         currentProjectState.selectedPolygon.polygon.addPoint(click.x, click.y);
+                        if (!saveButton.isEnabled())
+                        {
+                            setEnabledSaveButtons(true);
+                            repaint();
+                        }
                     }
                     currentProjectState.selectedVertexIndex = currentProjectState.selectedPolygon.polygon.npoints-1;
 
@@ -6390,15 +6430,23 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     
     @Override
     public void mouseReleased(MouseEvent e) {
+        if (currentlyDragging && !SwingUtilities.isMiddleMouseButton(e))
+        {
+            if (!saveButton.isEnabled())
+            {
+                setEnabledSaveButtons(true);
+                repaint();
+            }
+        }
         currentlyDragging = false;
         if (SwingUtilities.isMiddleMouseButton(e))
         {
             currentlyDraggingView = false;
             DragDownView = null;
         }
+        
         if (toolList.getSelectedItem().equals("Drag Select Objects"))
         {
-            //lisa falls .5 miles rappel optional 60 ft 
             selectObjects();
             DragUp = null;
         }

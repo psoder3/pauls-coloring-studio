@@ -133,7 +133,8 @@ public class PCSMenuBar extends JMenuBar {
         setEnabledManipulateVertexItems(false);
         saveProjectAsItem.setEnabled(false);
         this.applyToAllFramesItem.setEnabled(false);
-        
+        this.saveProjectItem.setEnabled(false);
+        this.coloringStudio.saveButton.setEnabled(false);
         
     }
     
@@ -188,6 +189,11 @@ public class PCSMenuBar extends JMenuBar {
         dragObjectsItem.setEnabled(enabled);
         drawItem.setEnabled(enabled);
         exportImageItem.setEnabled(enabled);
+        coloringStudio.toolList.setEnabled(enabled);
+        coloringStudio.ShowOutlinesCheckbox.setEnabled(enabled);
+        coloringStudio.colorLayersButton.setEnabled(enabled);
+        coloringStudio.recolorPolygonsButton.setEnabled(enabled);
+        //coloringStudio.saveButton.setEnabled(enabled);
         
         if (this.coloringStudio.PROJECT_TYPE == PaulsColoringStudio.PROJECT_TYPE_IMAGE)
         {
@@ -223,6 +229,8 @@ public class PCSMenuBar extends JMenuBar {
                         coloringStudio.PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
                         File vmocFile = new File(filepath);
                         coloringStudio.loadVideoProject(vmocFile);
+                        
+                        coloringStudio.editorPanel.updateFrame();
                         coloringStudio.editorPanel.setVideoNavigationEnabled(true);
                         repaint();
                     }
@@ -240,8 +248,10 @@ public class PCSMenuBar extends JMenuBar {
                         coloringStudio.editorPanel.setVideoNavigationEnabled(false);
                         saveProjectAsItem.setEnabled(true);
                         PCSMenuBar.this.applyToAllFramesItem.setEnabled(false);
+                        coloringStudio.setEnabledSaveButtons(false);
                     }
                     coloringStudio.loadedImage();
+                    coloringStudio.setEnabledSaveButtons(false);
 
                     repaint();
                 }
@@ -265,10 +275,7 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.newImageProject();
-                coloringStudio.loadedImage();
-                saveProjectAsItem.setEnabled(true);
-                PCSMenuBar.this.applyToAllFramesItem.setEnabled(false);
-
+                coloringStudio.setEnabledSaveButtons(true);            
             }
         });
         fileMenu.add(newImageProjectItem);
@@ -280,8 +287,6 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.newVideoProject();
-                coloringStudio.loadedImage();
-                saveProjectAsItem.setEnabled(false);
             }
         });
         fileMenu.add(newVideoProjectItem);
@@ -296,6 +301,7 @@ public class PCSMenuBar extends JMenuBar {
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.openImageProject();
                 coloringStudio.loadedImage();
+                coloringStudio.setEnabledSaveButtons(false);
                 saveProjectAsItem.setEnabled(true);
                 PCSMenuBar.this.applyToAllFramesItem.setEnabled(false);
             }
@@ -309,7 +315,9 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.openVideoProject();
+                coloringStudio.editorPanel.updateFrame();
                 coloringStudio.loadedImage();
+                coloringStudio.setEnabledSaveButtons(false);
             }
         });
         fileMenu.add(openVideoProjectItem);
@@ -389,6 +397,11 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.undo();
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }            
             }
         });
         editMenu.add(undoItem);
@@ -400,6 +413,11 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.redo();
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
             }
         });
         editMenu.add(redoItem);
@@ -452,6 +470,11 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.translateUp();
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    coloringStudio.repaint();
+                }
             }
         });
         editMenu.add(translateUp);
@@ -462,6 +485,11 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.translateLeft();
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    coloringStudio.repaint();
+                }
             }
         });
         editMenu.add(translateLeft);
@@ -472,6 +500,11 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.translateDown();
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    coloringStudio.repaint();
+                }
             }
         });
         editMenu.add(translateDown);
@@ -482,6 +515,11 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.translateRight();
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    coloringStudio.repaint();
+                }
             }
         });
         editMenu.add(translateRight);
@@ -498,12 +536,18 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.deletePoint();
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    coloringStudio.repaint();
+                }
             }
         });
         editMenu.add(backSpace);
         
         editMenu.addSeparator();
         
+        /*
         saveItem = new JMenuItem("Save Video Frame");
         saveItem.setAccelerator(KeyStroke.getKeyStroke(
                 KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
@@ -512,7 +556,7 @@ public class PCSMenuBar extends JMenuBar {
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.saveVideoFrame();
             }
-        });
+        });*/
         //editMenu.add(saveItem);
         
         
@@ -594,6 +638,11 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.findEdges();
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
             }
         });
         editMenu.add(findEdgesItem);
@@ -605,6 +654,13 @@ public class PCSMenuBar extends JMenuBar {
             @Override
             public void actionPerformed(ActionEvent e) {
                 coloringStudio.trackMotionFromPreviousFrame();
+                
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
+        
             }
         });
         editMenu.add(trackMotionItem);
