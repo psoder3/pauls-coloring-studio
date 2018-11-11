@@ -12,6 +12,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -310,8 +312,9 @@ public class RunPaulsColoringStudio {
             }
             else
             {
-                for (MaskedObject p : graphic.currentProjectState.selectedObjects)
+                for (Integer index : graphic.currentProjectState.selectedObjectIndices)
                 {
+                    MaskedObject p = graphic.currentProjectState.polygons.get(index);
                     graphic.currentProjectState.selectedPolygon = p;
                     graphic.currentProjectState.selectedVertexIndex = 0;
                     graphic.trackMotionFromPreviousFrame();
@@ -643,9 +646,20 @@ public class RunPaulsColoringStudio {
         
         graphic.revalidate();
         graphic.repaint();
-        graphic.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         graphic.frame.setExtendedState(graphic.frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
         graphic.frame.setVisible(true);
+        
+        graphic.frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        
+        graphic.frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                graphic.askSaveBeforeClosing();
+                graphic.frame.setVisible(false);
+                graphic.frame.dispose();
+                
+            }
+        });
         
         
         graphic.tryOpeningMostRecentProject();

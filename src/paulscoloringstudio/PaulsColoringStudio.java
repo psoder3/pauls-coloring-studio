@@ -65,6 +65,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
@@ -84,7 +85,7 @@ import org.bytedeco.javacv.FrameGrabber;
 
 public class PaulsColoringStudio extends JPanel implements MouseListener, KeyListener, MouseMotionListener, MouseWheelListener {
 
-    
+    File lastDirectory = new File(System.getProperty("user.home"));
     static int WINDOW_WIDTH = 1450;
     static int WINDOW_HEIGHT = 900;
     double scale = 1;
@@ -101,7 +102,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     Click DragDownView;
     
     MaskedObject emptyObject = new MaskedObject();
-    
+    boolean actuallyDragging = false;
     Stack<ProjectState> UndoStack = new Stack();
     Stack<ProjectState> RedoStack = new Stack();
     
@@ -159,6 +160,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     FFmpegFrameGrabber g;
     IplImage currentFrame;
     int currentObjectID = 0;
+    
+    boolean canAddUndoWASD = true;
     
     JButton saveVideoFrameButton = new JButton("Save Frame");
     JButton trackMotionButton = new JButton("Track Motion");
@@ -249,6 +252,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     double cellWidth = 10;
     double cellHeight = 10;
     
+    ProjectState TempState;
+    
     int count = 0;
     int bwcounter = 0;
     int RGCounter = 0;
@@ -281,10 +286,28 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         menuBar = new PCSMenuBar(this);
         
         
+        
+    }
+    
+    
+    public void askSaveBeforeClosing()
+    {
+        if (this.saveButton.isEnabled())
+        {
+            String prompt = "Save before closing?";
+            int dialogButton = JOptionPane.YES_NO_OPTION;
+            int dialogResult = JOptionPane.showConfirmDialog (null, prompt,"Warning",dialogButton);
+            if(dialogResult == JOptionPane.YES_OPTION){
+              // SAVE
+              saveProject();
+            }
+            this.setEnabledSaveButtons(false);
+        }
     }
     
     public void loadedImage()
     {
+        this.deselect();
         this.menuBar.setEnabledViewItems(true);
         this.menuBar.setEnabledOpenItems(true);
     }
@@ -310,6 +333,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             setNameAndDirectory(selected_pmoc_file);
             this.loadPMOC(selected_pmoc_file);
             this.loadPMOCImage(selected_pmoc_file);
+            this.menuBar.saveProjectAsItem.setEnabled(true);
             this.menuBar.applyToAllFramesItem.setEnabled(false);
         }
         loadedImage();
@@ -2541,9 +2565,12 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                             int selected_vertex = currentProjectState.selectedVertexIndex;
                             int prev_vertex = 0;//(selected_vertex + 1)%len;
                             g.setColor(Color.GREEN);
-                            g.drawLine(p.polygon.xpoints[selected_vertex], 
-                                    p.polygon.ypoints[selected_vertex],
-                                    p.polygon.xpoints[prev_vertex], p.polygon.ypoints[prev_vertex]);
+                            if (selected_vertex != -1)
+                            {
+                                g.drawLine(p.polygon.xpoints[selected_vertex], 
+                                        p.polygon.ypoints[selected_vertex],
+                                        p.polygon.xpoints[prev_vertex], p.polygon.ypoints[prev_vertex]);
+                            }
                         }
                     }
                 }
@@ -2570,8 +2597,11 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     dotOffset = 1;
                 }
                 g.setColor(Color.RED);
-                g.fillOval(currentProjectState.selectedPolygon.polygon.xpoints[currentProjectState.selectedVertexIndex] - dotOffset, 
+                if (currentProjectState.selectedPolygon != null)
+                {
+                    g.fillOval(currentProjectState.selectedPolygon.polygon.xpoints[currentProjectState.selectedVertexIndex] - dotOffset, 
                         currentProjectState.selectedPolygon.polygon.ypoints[currentProjectState.selectedVertexIndex] - dotOffset, dotWidth, dotWidth);
+                }
             }
 
             if (currentProjectState.selectedPolygon != null)
@@ -2643,12 +2673,12 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 g2d.setStroke(dashed);
                 g2d.drawRect(DragDown.x, DragDown.y, DragUp.x - DragDown.x, DragUp.y - DragDown.y);
             }
-            if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
+            if (!currentProjectState.selectedObjectIndices.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
             {
                 g.setColor(Color.CYAN);
-                for (MaskedObject p : currentProjectState.selectedObjects)
+                for (Integer index : currentProjectState.selectedObjectIndices)
                 {
-                    g.drawPolygon(p.polygon);
+                    g.drawPolygon(currentProjectState.polygons.get(index).polygon);
                 }
             }
             if (!currentProjectState.selectedVertices.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
@@ -2667,7 +2697,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
                 {
                     ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
-                    Polygon p = currentProjectState.selectedObjects.get(i).polygon;
+                    Polygon p = currentProjectState.polygons.get(
+                            currentProjectState.selectedObjectIndices.get(i)).polygon;
 
                     for (int j = 0; j < vertList.size(); j++)
                     {
@@ -2997,6 +3028,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     {
         if (LoadImage())
         {
+            resetUndoHistory();
+
             PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
             loadedImage();
             menuBar.saveProjectAsItem.setEnabled(true);
@@ -3009,6 +3042,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     {
         if (chooseVideoFile())
         {
+            resetUndoHistory();
+
             PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
             this.editorPanel.setFrameGrabEnabled(true);
             this.editorPanel.setVideoNavigationEnabled(true);
@@ -3021,6 +3056,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     {
         if (choosePMOC())
         {
+            resetUndoHistory();
+
             PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_IMAGE;
             
             
@@ -3032,6 +3069,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         if (chooseVMOC())
         {
             // if success
+            resetUndoHistory();
+
             PROJECT_TYPE = PaulsColoringStudio.PROJECT_TYPE_VIDEO;
             this.editorPanel.setVideoNavigationEnabled(true);
         }
@@ -3042,12 +3081,14 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
                 "PMOC Files (Paul's Masked Object Coloring file type)", "pmoc");
         JFileChooser fc = new JFileChooser();
+        fc.setCurrentDirectory(lastDirectory);
         fc.setFileFilter(filter);
         /*fc.setCurrentDirectory(new File(System.getProperty("user.home") 
                 + File.separator + "NetBeansProjects" 
                 + File.separator + "ImageEditor"
                 + File.separator + "PMOCs"));*/
         int result = fc.showOpenDialog(this);
+        lastDirectory = fc.getCurrentDirectory();
         try
         {
             if (result == JFileChooser.CANCEL_OPTION)
@@ -3206,7 +3247,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     
     public void findEdges()
     {
-        addCurrentStatusToEditHistory();
+        pushCurrentToUndoStack("find edges");
 
         int searchRadius = 10;
         searchRadius /= scale;
@@ -3215,7 +3256,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
             {
                 ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
-                MaskedObject p = currentProjectState.selectedObjects.get(i);
+                MaskedObject p = currentProjectState.polygons.get(
+                        currentProjectState.selectedObjectIndices.get(i));
                 for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
                 {
                     int vertIndex = vertList.get(j);
@@ -3307,8 +3349,46 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         {
             return;
         }
+        currentProjectState.lastEdit = UndoStack.get(UndoStack.size()-1).lastEdit;
         RedoStack.push(deepCopyState(currentProjectState));
+        
+        this.menuBar.redoItem.setText("Redo " + currentProjectState.lastEdit);
+        this.menuBar.redoItem.setEnabled(true);
         currentProjectState = UndoStack.pop();
+        if (currentProjectState.selectedPolygonIndex != -1)
+        {
+            currentProjectState.selectedPolygon = currentProjectState.polygons.get(currentProjectState.selectedPolygonIndex);
+        }
+        else
+        {
+            currentProjectState.selectedPolygon = null;
+        }
+        String undolastEdit = "";
+        if (!UndoStack.isEmpty())
+        {
+            undolastEdit = UndoStack.get(UndoStack.size()-1).lastEdit;
+        }
+        this.menuBar.undoItem.setText("Undo " + undolastEdit);
+
+        String redolastEdit = "";
+        if (!RedoStack.isEmpty())
+        {
+            redolastEdit = RedoStack.get(RedoStack.size()-1).lastEdit;
+        }
+        
+        this.menuBar.redoItem.setText("Redo " + redolastEdit);
+        
+        //this.colorizeImageByLayers();
+        if (UndoStack.empty())
+        {
+            this.menuBar.undoItem.setText("Undo");
+            this.menuBar.undoItem.setEnabled(false);
+        }
+        
+        setSlidersToUndoRedoState();
+        
+        //logAllEdits();
+
         repaint();
     }
     
@@ -3319,14 +3399,130 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             return;
         }
         UndoStack.push(deepCopyState(currentProjectState));
+        
+        this.menuBar.undoItem.setText("Undo " + currentProjectState.lastEdit);
+        this.menuBar.undoItem.setEnabled(true);
         currentProjectState = RedoStack.pop();
+        if (currentProjectState.selectedPolygonIndex != -1)
+        {
+            currentProjectState.selectedPolygon = currentProjectState.polygons.get(currentProjectState.selectedPolygonIndex);
+        }
+        else
+        {
+            currentProjectState.selectedPolygon = null;
+        }
+        
+        
+        String undolastEdit = "";
+        if (!UndoStack.isEmpty())
+        {
+            undolastEdit = UndoStack.get(UndoStack.size()-1).lastEdit;
+        }
+        this.menuBar.undoItem.setText("Undo " + undolastEdit);
+        
+        String redolastEdit = "";
+        if (!RedoStack.isEmpty())
+        {
+            redolastEdit = RedoStack.get(RedoStack.size()-1).lastEdit;
+        }
+        
+        this.menuBar.redoItem.setText("Redo " + redolastEdit);
+        
+        //this.colorizeImageByLayers();
+        if (RedoStack.empty())
+        {
+            this.menuBar.redoItem.setText("Redo");
+            this.menuBar.redoItem.setEnabled(false);        
+        }
+        
+        setSlidersToUndoRedoState();
+
+        //logAllEdits();
+
         repaint();
     }
     
-    private void addCurrentStatusToEditHistory()
+    void pushCurrentToUndoStack(String editType)
     {
+        currentProjectState.lastEdit = editType;
+        this.menuBar.undoItem.setText("Undo " + editType);
+        this.menuBar.undoItem.setEnabled(true);
+        // clear redo stack
+        RedoStack.clear();
+        this.menuBar.redoItem.setEnabled(false);
+        this.menuBar.redoItem.setText("Redo");
+
+        int undoStackSizeLimit = 100;
+        if (UndoStack.size() >= undoStackSizeLimit)
+        {
+            // remove first in element
+            UndoStack.remove(0);
+        }
+        if (TempState != null)
+        {
+            UndoStack.push(TempState);
+        }
+        else
+        {
+            UndoStack.push(deepCopyState(currentProjectState));
+        }
+        //logAllEdits();
+    }
+    
+    void resetUndoHistory()
+    {
+        UndoStack.clear();
+        RedoStack.clear();
+        menuBar.undoItem.setText("Undo");
+        menuBar.undoItem.setEnabled(false);
+        menuBar.redoItem.setText("Redo");
+        menuBar.redoItem.setEnabled(false);
+    }
+    
+    void logAllEdits()
+    {
+        System.out.println("UNDO STACK:");
+        for (ProjectState ps : UndoStack)
+        {
+            System.out.println(ps.lastEdit);
+        }
+        System.out.println("REDO STACK:");
+        for (ProjectState ps : RedoStack)
+        {
+            System.out.println(ps.lastEdit);
+        }
+    }
+    
+    void setSlidersToUndoRedoState()
+    {
+        MaskedObject clickedObject = this.currentProjectState.selectedPolygon;
+        if (currentProjectState.selectedPolygon == null)
+        {
+            return;
+        }
+        if (editorPanel.whichColorList.getSelectedItem().equals("Primary Color"))
+        {
+            editorPanel.setSelectedColor(currentProjectState.selectedPolygon.color);
+            editorPanel.hue_variation_spinner.setValue(clickedObject.hue_variation);
+            editorPanel.sat_variation_spinner.setValue(clickedObject.saturation_variation);
+            editorPanel.hue_var_slider.setValue(clickedObject.hue_variation);
+            editorPanel.sat_var_slider.setValue(clickedObject.saturation_variation);
+        }
+        else if (editorPanel.whichColorList.getSelectedItem().equals("Secondary Color"))
+        {
+            editorPanel.setSelectedColor(currentProjectState.selectedPolygon.secondary_color);
+            editorPanel.hue_variation_spinner.setValue(clickedObject.secondary_hue_variation);
+            editorPanel.sat_variation_spinner.setValue(clickedObject.secondary_sat_variation);
+            editorPanel.hue_var_slider.setValue(clickedObject.secondary_hue_variation);
+            editorPanel.sat_var_slider.setValue(clickedObject.secondary_sat_variation);
+        }
+        editorPanel.depthField.setText(clickedObject.depth+"");
+
+        editorPanel.complement_spinner.setValue(clickedObject.complement_threshold);
+        editorPanel.complement_slider.setValue(clickedObject.complement_threshold);
+        editorPanel.edgeBlendList.setSelectedIndex(clickedObject.edgeBlendIndex);
+        editorPanel.idField.setText(clickedObject.id+"");
         
-        UndoStack.push(deepCopyState(currentProjectState));
     }
 
     private ArrayList<ArrayList<Integer>> deepCopyVertices(ArrayList<ArrayList<Integer>> vertices)
@@ -3356,15 +3552,24 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         copiedState.adjacentPolygon = deepCopyPolygon(state.adjacentPolygon);
         copiedState.adjacentPolygonVertex = state.adjacentPolygonVertex;
         copiedState.hoverVertexIndex = state.hoverVertexIndex;
-        ArrayList<MaskedObject> copiedSelectedPolys = new ArrayList();
-        for (MaskedObject p : state.selectedObjects)
+        ArrayList<Integer> copiedSelectedPolys = new ArrayList();
+        for (Integer index : state.selectedObjectIndices)
         {
-            copiedSelectedPolys.add(deepCopyPolygon(p));
+            copiedSelectedPolys.add(index);
         }
-        copiedState.selectedObjects = copiedSelectedPolys;
+        copiedState.selectedObjectIndices = copiedSelectedPolys;
         copiedState.selectedVertexIndex = state.selectedVertexIndex;
-        copiedState.selectedPolygon = deepCopyPolygon(state.selectedPolygon);
+        copiedState.selectedPolygonIndex = state.selectedPolygonIndex;
+        if (copiedState.selectedPolygonIndex != -1)
+        {
+            copiedState.selectedPolygon = copiedState.polygons.get(copiedState.selectedPolygonIndex);
+        }
+        else
+        {
+            copiedState.selectedPolygon = null;
+        }
         copiedState.selectedVertices = deepCopyVertices(state.selectedVertices);
+        copiedState.lastEdit = state.lastEdit;
         return copiedState;
     }
     
@@ -3425,7 +3630,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     public void trackMotionFromPreviousFrame()
     {
         double similarityThreshold = 10;
-        addCurrentStatusToEditHistory();
+        pushCurrentToUndoStack("track motion");
         int fingerprintRadius = 3;
         int searchRadius = 16;
         //searchRadius /= scale;
@@ -3571,9 +3776,16 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     
     void writeImageFile(BufferedImage imgPixels, String absFilename, String type)
     {
+        File outputfile = new File(absFilename+"."+type);
+        writeImageFile(imgPixels,outputfile);
+    }
+    
+    void writeImageFile(BufferedImage imgPixels, File file)
+    {
         try {
-            File outputfile = new File(absFilename+"."+type);
-            ImageIO.write(imgPixels, type, outputfile);
+            int length = file.getAbsolutePath().length();
+            String type = file.getAbsolutePath().substring(length-3);
+            ImageIO.write(imgPixels, type, file);
         } catch (IOException ex) {
             Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -3671,13 +3883,16 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         {
             //saveVideoProjectAs();
         }
+        this.setEnabledSaveButtons(false);
     }
     
     void saveImageProjectAs()
     {
         JFileChooser fileChooser = new JFileChooser();
-
+        fileChooser.setCurrentDirectory(lastDirectory);
         int userSelection = fileChooser.showSaveDialog(this.frame);
+        lastDirectory = fileChooser.getCurrentDirectory();
+
         boolean fileExists = true;
         while (userSelection == JFileChooser.APPROVE_OPTION && fileExists) {
             fileExists = false;
@@ -3697,6 +3912,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 addToRecentFiles("pmoc");
             }
         }
+
         alreadySaved = true;
     }
     
@@ -3774,11 +3990,37 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         }
     }
     
+    
+    void exportImage()
+    {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(lastDirectory);
+        int userSelection = fileChooser.showSaveDialog(this.frame);
+        lastDirectory = fileChooser.getCurrentDirectory();
+        boolean fileExists = true;
+        while (userSelection == JFileChooser.APPROVE_OPTION && fileExists) {
+            fileExists = false;
+            File fileToSave = new File(fileChooser.getSelectedFile().getAbsolutePath()+".png");
+            String absPath = fileToSave.getAbsolutePath();
+            if (Files.exists(Paths.get(absPath))) {
+                fileExists = true;
+                new AboutDialog(this.frame,"Error","A file with that name already exists in that location");
+                userSelection = fileChooser.showSaveDialog(this.frame);
+            }
+            else
+            {  
+                this.writeImageFile(this.image_pixels,fileToSave);
+            }
+        }
+        alreadySaved = true;
+    }
+    
     void deselect()
     {
+        canAddUndoWASD = true;
         currentProjectState.selectedPolygon = null;
         currentProjectState.selectedVertexIndex = -1;
-        currentProjectState.selectedObjects.clear();
+        currentProjectState.selectedObjectIndices.clear();
         currentProjectState.selectedVertices.clear();
         editorPanel.setSelectedColor(Color.white);
         editorPanel.depthField.setText("0");
@@ -4096,7 +4338,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         this.currentProjectState.adjacentPolygon = null;
         this.currentProjectState.adjacentPolygonVertex = -1;
         this.currentProjectState.hoverVertexIndex = -1;
-        this.currentProjectState.selectedObjects.clear();
+        this.currentProjectState.selectedObjectIndices.clear();
         this.currentProjectState.selectedPolygon = null;
         this.currentProjectState.selectedVertexIndex = -1;
         this.currentProjectState.selectedVertices.clear();
@@ -4106,12 +4348,16 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     boolean LoadImage() {
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Image Files", "jpg", "png", "gif", "jpeg");
         JFileChooser fc = new JFileChooser();
+        fc.setCurrentDirectory(lastDirectory);
+
         fc.setFileFilter(filter);
         /*fc.setCurrentDirectory(new File(System.getProperty("user.home") 
                 + File.separator + "NetBeansProjects"
                 + File.separator + "ImageEditor"
                 + File.separator + "PMOCs"));*/
         int result = fc.showOpenDialog(PaulsColoringStudio.this);
+        lastDirectory = fc.getCurrentDirectory();
+
         try
         {
             if (result == JFileChooser.CANCEL_OPTION)
@@ -4123,7 +4369,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 return false;
             }
             selected_file = fc.getSelectedFile();
-            
+
             clearObjects();
             
             
@@ -4771,6 +5017,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 poly.polygon.addPoint(xcoord, ycoord);
             }
             poly.id = tempPolygons.size();
+            this.currentObjectID = poly.id;
             poly.depth = depth;
             tempPolygons.add(poly);
         }
@@ -5002,11 +5249,15 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
                 "VMOC Files ([Paul's] Video Masked Object Coloring file type)", "VMOC");
         JFileChooser fc = new JFileChooser();
+        fc.setCurrentDirectory(lastDirectory);
+
         fc.setFileFilter(filter);
         //fc.setCurrentDirectory(new File(System.getProperty("user.home") 
         //        + File.separator + "documents"));
         fc.showOpenDialog(PaulsColoringStudio.this);
         
+        lastDirectory = fc.getCurrentDirectory();
+
         
         if (fc.getSelectedFile() == null)
         {
@@ -5025,11 +5276,14 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Video Files", "mp4", "avi", 
                 "mov");
         JFileChooser fc = new JFileChooser();
+        fc.setCurrentDirectory(lastDirectory);
+
         fc.setFileFilter(filter);
         //fc.setCurrentDirectory(new File(System.getProperty("user.home") 
         //        + File.separator + "documents"));
         fc.showOpenDialog(PaulsColoringStudio.this);
-        
+        lastDirectory = fc.getCurrentDirectory();
+
         try
         {
             if (fc.getSelectedFile() == null)
@@ -6144,6 +6398,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
        
     @Override
     public void mouseClicked(MouseEvent e) {
+        canAddUndoWASD = true;
         Click click = convertClick(e);
         menuBar.setEnabledManipulateVertexItems(true);
 
@@ -6158,6 +6413,14 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         else if (toolList.getSelectedItem().equals("Select Polygon Mode"))
         {
             MaskedObject clickedObject = pointIsContainedByObject(click.x, click.y);
+            if (clickedObject != null)
+            {
+                currentProjectState.selectedPolygonIndex = this.getPolygonIndex(clickedObject);
+            }
+            else
+            {
+                currentProjectState.selectedPolygonIndex = -1;
+            }
             if (clickedObject != null)
             {
                 if (!saveButton.isEnabled())
@@ -6210,12 +6473,15 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             {
                 if (currentProjectState.tempAutoCompletePolygon != null)
                 {
+                    pushCurrentToUndoStack("add auto-completed polygon");
+
                     for (int i = 0; i < currentProjectState.polygons.size(); i++)
                     {
                         if (currentProjectState.polygons.get(i).polygon.equals(currentProjectState.selectedPolygon.polygon))
                         {
                             currentProjectState.polygons.remove(i);
                             currentProjectState.polygons.add(i,currentProjectState.tempAutoCompletePolygon);
+                            break;
                         }
                     }
                     currentProjectState.selectedPolygon = currentProjectState.tempAutoCompletePolygon;
@@ -6238,8 +6504,12 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 }
                 else
                 {
+                    boolean isAddingNewPolygon = false;
                     if (currentProjectState.selectedPolygon == null)
                     {
+                        pushCurrentToUndoStack("add new polygon");
+                        isAddingNewPolygon = true;
+
                         this.editorPanel.setObjectEditorEnabled(true);
                         currentProjectState.selectedPolygon = new MaskedObject();
                         currentProjectState.selectedPolygon.id = ++currentObjectID;
@@ -6254,6 +6524,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     }
                     if (currentProjectState.adjacentPolygon != null && currentProjectState.adjacentPolygonVertex != -1)
                     {
+                        pushCurrentToUndoStack("add vertex");
+
                         currentProjectState.selectedPolygon.polygon.addPoint(
                                 currentProjectState.adjacentPolygon.polygon.xpoints[currentProjectState.adjacentPolygonVertex],
                                 currentProjectState.adjacentPolygon.polygon.ypoints[currentProjectState.adjacentPolygonVertex]);
@@ -6266,6 +6538,11 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     }
                     else
                     {
+                        if (!isAddingNewPolygon)
+                        {
+                            pushCurrentToUndoStack("add vertex");
+                        }
+
                         currentProjectState.selectedPolygon.polygon.addPoint(click.x, click.y);
                         if (!saveButton.isEnabled())
                         {
@@ -6349,7 +6626,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             {
                 deselect();            
                 DragDown = convertClick(e);
-                currentProjectState.selectedObjects.clear();
+                currentProjectState.selectedObjectIndices.clear();
                 currentProjectState.selectedVertices.clear();
                 repaint();
             }
@@ -6365,7 +6642,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             
             else
             {
-                
+                TempState = deepCopyState(currentProjectState);
+
                 if (currentProjectState.hoverVertexIndex != -1)
                 {
                     currentProjectState.selectedVertexIndex = currentProjectState.hoverVertexIndex;
@@ -6393,7 +6671,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 PointXY p2 = new PointXY(p.polygon.xpoints[i], p.polygon.ypoints[i]);
                 if (rect.contains(p2.x,p2.y))
                 {
-                    currentProjectState.selectedObjects.add(p);
+                    currentProjectState.selectedObjectIndices.add(this.getPolygonIndex(p));
                     break;
                 }
             }
@@ -6414,9 +6692,9 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 PointXY p2 = new PointXY(p.polygon.xpoints[i], p.polygon.ypoints[i]);
                 if (rect.contains(p2.x,p2.y))
                 {
-                    if (!currentProjectState.selectedObjects.contains(p))
+                    if (!currentProjectState.selectedObjectIndices.contains(p))
                     {
-                        currentProjectState.selectedObjects.add(p);
+                        currentProjectState.selectedObjectIndices.add(this.getPolygonIndex(p));
                     }
                     vertexList.add(i);
                 }
@@ -6430,32 +6708,47 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     
     @Override
     public void mouseReleased(MouseEvent e) {
-        if (currentlyDragging && !SwingUtilities.isMiddleMouseButton(e))
+        if (actuallyDragging && currentlyDragging && !SwingUtilities.isMiddleMouseButton(e))
         {
+            TempState.lastEdit = "drag vertex";
+            this.pushCurrentToUndoStack("drag vertex");
             if (!saveButton.isEnabled())
             {
                 setEnabledSaveButtons(true);
                 repaint();
             }
         }
-        currentlyDragging = false;
+        
+
         if (SwingUtilities.isMiddleMouseButton(e))
         {
             currentlyDraggingView = false;
             DragDownView = null;
         }
         
-        if (toolList.getSelectedItem().equals("Drag Select Objects"))
+        if (actuallyDragging && toolList.getSelectedItem().equals("Drag Select Objects"))
         {
             selectObjects();
             DragUp = null;
+            if (!this.currentProjectState.selectedObjectIndices.isEmpty())
+            {
+                this.menuBar.setEnabledWASD(true);
+                this.repaint();
+            }
         }
-        else if (toolList.getSelectedItem().equals("Drag Select Vertices"))
+        else if (actuallyDragging && toolList.getSelectedItem().equals("Drag Select Vertices"))
         {
             selectVertices();
             DragUp = null;
+            if (!this.currentProjectState.selectedVertices.isEmpty())
+            {
+                this.menuBar.setEnabledWASD(true);
+                this.repaint();
+            }
         }
-        
+        actuallyDragging = false;
+        currentlyDragging = false;
+        TempState = null;
         repaint();
     }
 
@@ -6465,6 +6758,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
 
     @Override
     public void mouseExited(MouseEvent e) {
+        
         this.currentProjectState.adjacentPolygon = null;
         this.currentProjectState.adjacentPolygonVertex = -1;
         repaint();
@@ -6527,6 +6821,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
 
     @Override
     public void mouseDragged(MouseEvent e) {
+        actuallyDragging = true;
         Click click = convertClick(e);
         if (toolList.getSelectedItem().equals("Pen Tool"))
         {
@@ -6880,12 +7175,38 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         repaint();
     }
     
+    
+    public static void setTimeout(Runnable runnable, int delay){
+        new Thread(() -> {
+            try {
+                Thread.sleep(delay);
+                runnable.run();
+            }
+            catch (Exception e){
+                System.err.println(e);
+            }
+        }).start();
+    }
+    
+    void movedWASD()
+    {
+        if (canAddUndoWASD)
+        {
+            setTimeout(() -> canAddUndoWASD = true, 5000);
+
+            this.pushCurrentToUndoStack("move item(s)");
+            canAddUndoWASD = false;
+        }
+    }
+    
     void translateUp()
     {
-        if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
+        if (!currentProjectState.selectedObjectIndices.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
         {
-            for (MaskedObject p : currentProjectState.selectedObjects)
+            
+            for (Integer index : currentProjectState.selectedObjectIndices)
             {
+                MaskedObject p = currentProjectState.polygons.get(index);
                 for (int i = 0; i < p.polygon.npoints; i++)
                 {
                     p.polygon.ypoints[i]--;
@@ -6893,12 +7214,13 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 p.polygon.invalidate();
             }
         }
-        else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
+        else if (!currentProjectState.selectedVertices.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
         {
             for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
             {
                 ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
-                Polygon p = currentProjectState.selectedObjects.get(i).polygon;
+                Polygon p = currentProjectState.polygons.get(
+                        currentProjectState.selectedObjectIndices.get(i)).polygon;
                 for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
                 {
                     p.ypoints[vertList.get(j)]--;
@@ -6913,17 +7235,22 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             //selectedVertex.y = selectedPolygon.ypoints[selectedVertexIndex];
             currentProjectState.selectedPolygon.polygon.invalidate();
         }
+        else
+        {
+            return;
+        }
+        movedWASD();
 
         repaint();
-        return;
     }
     
     void translateLeft()
     {
-        if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
+        if (!currentProjectState.selectedObjectIndices.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
         {
-            for (MaskedObject p : currentProjectState.selectedObjects)
+            for (Integer index : currentProjectState.selectedObjectIndices)
             {
+                MaskedObject p = currentProjectState.polygons.get(index);
                 for (int i = 0; i < p.polygon.npoints; i++)
                 {
                     p.polygon.xpoints[i]--;
@@ -6931,12 +7258,13 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 p.polygon.invalidate();
             }
         }
-        else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
+        else if (!currentProjectState.selectedVertices.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
         {
             for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
             {
                 ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
-                Polygon p = currentProjectState.selectedObjects.get(i).polygon;
+                Polygon p = currentProjectState.polygons.get(
+                        currentProjectState.selectedObjectIndices.get(i)).polygon;
                 for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
                 {
                     p.xpoints[vertList.get(j)]--;
@@ -6952,16 +7280,22 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             currentProjectState.selectedPolygon.polygon.invalidate();
         }
 
+        else
+        {
+            return;
+        }
+        movedWASD();
+
         repaint();
-        return;
     }
     
     void translateRight()
     {
-        if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
+        if (!currentProjectState.selectedObjectIndices.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
         {
-            for (MaskedObject p : currentProjectState.selectedObjects)
+            for (Integer index : currentProjectState.selectedObjectIndices)
             {
+                MaskedObject p = currentProjectState.polygons.get(index);
                 for (int i = 0; i < p.polygon.npoints; i++)
                 {
                     p.polygon.xpoints[i]++;
@@ -6969,12 +7303,13 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 p.polygon.invalidate();
             }
         }
-        else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
+        else if (!currentProjectState.selectedVertices.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
         {
             for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
             {
                 ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
-                Polygon p = currentProjectState.selectedObjects.get(i).polygon;
+                Polygon p = currentProjectState.polygons.get(
+                        currentProjectState.selectedObjectIndices.get(i)).polygon;
                 for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
                 {
                     p.xpoints[vertList.get(j)]++;
@@ -6990,16 +7325,22 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             currentProjectState.selectedPolygon.polygon.invalidate();
         }
 
+        else
+        {
+            return;
+        }
+        movedWASD();
+
         repaint();
-        return;
     }
     
     void translateDown()
     {
-        if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
+        if (!currentProjectState.selectedObjectIndices.isEmpty() && toolList.getSelectedItem().equals("Drag Select Objects"))
         {
-            for (MaskedObject p : currentProjectState.selectedObjects)
+            for (Integer index : currentProjectState.selectedObjectIndices)
             {
+                MaskedObject p = currentProjectState.polygons.get(index);
                 for (int i = 0; i < p.polygon.npoints; i++)
                 {
                     p.polygon.ypoints[i]++;
@@ -7007,12 +7348,13 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 p.polygon.invalidate();
             }
         }
-        else if (!currentProjectState.selectedObjects.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
+        else if (!currentProjectState.selectedVertices.isEmpty() && toolList.getSelectedItem().equals("Drag Select Vertices"))
         {
             for (int i = 0; i < currentProjectState.selectedVertices.size(); i++)
             {
                 ArrayList<Integer> vertList = currentProjectState.selectedVertices.get(i);
-                Polygon p = currentProjectState.selectedObjects.get(i).polygon;
+                Polygon p = currentProjectState.polygons.get(
+                        currentProjectState.selectedObjectIndices.get(i)).polygon;
                 for (int j = 0; j < currentProjectState.selectedVertices.get(i).size(); j++)
                 {
                     p.ypoints[vertList.get(j)]++;
@@ -7028,15 +7370,26 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             currentProjectState.selectedPolygon.polygon.invalidate();
         }
 
+        else
+        {
+            return;
+        }
+        movedWASD();
+
         repaint();
-        return;
     }
     
     void deletePoint()
     {
         //System.out.println("Pressed Delete");
+        if (currentProjectState.selectedPolygon == null)
+        {
+            return;
+        }
+        
         if (currentProjectState.selectedPolygon.polygon.npoints == 1)
         {
+            this.pushCurrentToUndoStack("delete polygon");
             currentProjectState.polygons.remove(currentProjectState.selectedPolygon);
             currentProjectState.selectedPolygon = null;
             currentProjectState.selectedVertexIndex = -1;
@@ -7044,10 +7397,11 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             repaint();
             return;
         }
-        if (currentProjectState.selectedPolygon == null)
+        else
         {
-            return;
+            this.pushCurrentToUndoStack("delete vertex");
         }
+        
         for (int i = currentProjectState.selectedVertexIndex+1; i < currentProjectState.selectedPolygon.polygon.npoints; i++)
         {
             currentProjectState.selectedPolygon.polygon.xpoints[i-1] = currentProjectState.selectedPolygon.polygon.xpoints[i];
@@ -7149,8 +7503,9 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     }
 
     void recolorSelectedPolygons() {
-        for (MaskedObject p : currentProjectState.selectedObjects)
+        for (Integer index : currentProjectState.selectedObjectIndices)
         {
+            MaskedObject p = currentProjectState.polygons.get(index);
             currentProjectState.selectedPolygon = p;
             currentProjectState.selectedVertexIndex = 0;
             colorizePolygon(p);
@@ -7324,14 +7679,17 @@ class Click {
 
 class ProjectState {
     
+    String lastEdit = "";
     ArrayList<MaskedObject> polygons = new ArrayList();
+    int selectedPolygonIndex = -1;
     MaskedObject selectedPolygon;
     int selectedVertexIndex = -1;
     int hoverVertexIndex = -1;
     MaskedObject adjacentPolygon;
     int adjacentPolygonVertex = -1;
     MaskedObject tempAutoCompletePolygon = null;
-    ArrayList<MaskedObject> selectedObjects = new ArrayList();
+    
+    ArrayList<Integer> selectedObjectIndices = new ArrayList();
     ArrayList<ArrayList<Integer>> selectedVertices = new ArrayList();
     
 }

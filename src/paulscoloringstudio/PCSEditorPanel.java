@@ -155,6 +155,7 @@ public class PCSEditorPanel extends JPanel {
     private int red = 0;
     private int green = 0;
     private int blue = 0;
+    double depthSnapshot = 0;
     
     private PaulsColoringStudio coloringStudio;
     
@@ -174,10 +175,21 @@ public class PCSEditorPanel extends JPanel {
         depthField.addFocusListener(new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
+                try
+                {
+                    depthSnapshot = Double.parseDouble(depthField.getText());
+                }
+                catch (NumberFormatException ex)
+                {
+                    Logger.getLogger(ex.getMessage());
+                }
             }
 
             @Override
             public void focusLost(FocusEvent e) {
+                
+                
+
                 double number = coloringStudio.currentProjectState.selectedPolygon.depth;
                 try
                 {
@@ -186,6 +198,10 @@ public class PCSEditorPanel extends JPanel {
                 catch (NumberFormatException ex)
                 {
                     depthField.setText(number+"");
+                }
+                if (number != depthSnapshot)
+                {
+                    coloringStudio.pushCurrentToUndoStack("change depth of object");
                 }
                 coloringStudio.currentProjectState.selectedPolygon.depth = number;
                 //imageFilters.colorizeImageByLayers(); // this function takes forever
@@ -238,6 +254,32 @@ public class PCSEditorPanel extends JPanel {
                 repaint();
             }
         });
+        
+        hue_spinner.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change hue");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        hue_slider.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change hue");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        
         hue_panel.add(hue_label);
         hue_panel.add(hue_slider);
         hue_panel.add(hue_spinner);
@@ -275,6 +317,35 @@ public class PCSEditorPanel extends JPanel {
                 repaint();
             }
         });
+        
+        
+        
+        sat_spinner.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change saturation");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        sat_slider.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change saturation");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        
+        
         sat_panel.add(sat_label);
         sat_panel.add(sat_slider);
         sat_panel.add(sat_spinner);
@@ -358,6 +429,31 @@ public class PCSEditorPanel extends JPanel {
                 repaint();
             }
         });
+        
+        hue_variation_spinner.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change hue variation");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        hue_var_slider.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change hue variation");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
         hue_variation_panel.add(hue_variation_label);
         hue_variation_panel.add(hue_var_slider);
         hue_variation_panel.add(hue_variation_spinner);
@@ -408,6 +504,33 @@ public class PCSEditorPanel extends JPanel {
                 calculateRGB();
             }
         });
+        
+        
+        sat_variation_spinner.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change saturation variation");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        sat_var_slider.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change saturation variation");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        
         sat_variation_panel.add(sat_variation_label);
         sat_variation_panel.add(sat_var_slider);
         sat_variation_panel.add(sat_variation_spinner);
@@ -450,6 +573,33 @@ public class PCSEditorPanel extends JPanel {
                 repaint();
             }
         });
+        
+        
+        complement_spinner.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change secondary threshold");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        complement_slider.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change secondary threshold");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        
         complement_panel.add(complement_label);
         complement_panel.add(complement_slider);
         complement_panel.add(complement_spinner);
@@ -519,7 +669,9 @@ public class PCSEditorPanel extends JPanel {
         frameSliderCL = new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
+                coloringStudio.askSaveBeforeClosing();
                 video_frame_spinner.setValue((int)(video_frame_slider.getValue()));
+                coloringStudio.setEnabledSaveButtons(false);
                 repaint();
             }
         };
@@ -553,7 +705,10 @@ public class PCSEditorPanel extends JPanel {
         framesSpinnerCL = new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
+                coloringStudio.askSaveBeforeClosing();
                 updateFrame();
+                coloringStudio.setEnabledSaveButtons(false);
+                repaint();
             }
         };
         

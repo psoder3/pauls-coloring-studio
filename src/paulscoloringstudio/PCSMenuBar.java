@@ -135,6 +135,8 @@ public class PCSMenuBar extends JMenuBar {
         this.applyToAllFramesItem.setEnabled(false);
         this.saveProjectItem.setEnabled(false);
         this.coloringStudio.saveButton.setEnabled(false);
+        this.undoItem.setEnabled(false);
+        this.redoItem.setEnabled(false);
         
     }
     
@@ -164,6 +166,14 @@ public class PCSMenuBar extends JMenuBar {
         {
             trackMotionItem.setEnabled(enabled);
         }
+    }
+    
+    void setEnabledWASD(boolean enabled)
+    {
+        translateUp.setEnabled(enabled);
+        translateDown.setEnabled(enabled);
+        translateRight.setEnabled(enabled);
+        translateLeft.setEnabled(enabled);
     }
     
     void setEnabledOpenItems(boolean enabled)
@@ -215,6 +225,8 @@ public class PCSMenuBar extends JMenuBar {
             item.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    coloringStudio.askSaveBeforeClosing();
+                    coloringStudio.resetUndoHistory();
                     String filepath = item.getText();
                     File selected_file = new File(filepath);
                     
@@ -250,6 +262,7 @@ public class PCSMenuBar extends JMenuBar {
                         PCSMenuBar.this.applyToAllFramesItem.setEnabled(false);
                         coloringStudio.setEnabledSaveButtons(false);
                     }
+                    
                     coloringStudio.loadedImage();
                     coloringStudio.setEnabledSaveButtons(false);
 
@@ -274,8 +287,8 @@ public class PCSMenuBar extends JMenuBar {
         newImageProjectItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                coloringStudio.askSaveBeforeClosing();
                 coloringStudio.newImageProject();
-                coloringStudio.setEnabledSaveButtons(true);            
             }
         });
         fileMenu.add(newImageProjectItem);
@@ -286,6 +299,7 @@ public class PCSMenuBar extends JMenuBar {
         newVideoProjectItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                coloringStudio.askSaveBeforeClosing();
                 coloringStudio.newVideoProject();
             }
         });
@@ -299,6 +313,7 @@ public class PCSMenuBar extends JMenuBar {
         openImageProjectItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                coloringStudio.askSaveBeforeClosing();
                 coloringStudio.openImageProject();
                 coloringStudio.loadedImage();
                 coloringStudio.setEnabledSaveButtons(false);
@@ -314,6 +329,7 @@ public class PCSMenuBar extends JMenuBar {
         openVideoProjectItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                coloringStudio.askSaveBeforeClosing();
                 coloringStudio.openVideoProject();
                 coloringStudio.editorPanel.updateFrame();
                 coloringStudio.loadedImage();
@@ -358,7 +374,7 @@ public class PCSMenuBar extends JMenuBar {
         exportImageItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.exportImage();
+                coloringStudio.exportImage();
             }
         });
         fileMenu.add(exportImageItem);
@@ -380,6 +396,7 @@ public class PCSMenuBar extends JMenuBar {
         closeItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                coloringStudio.askSaveBeforeClosing();
                 coloringStudio.close();
             }
         });
