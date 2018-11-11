@@ -385,7 +385,7 @@ public class PCSMenuBar extends JMenuBar {
         exportVideoItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //coloringStudio.exportVideo();
+                coloringStudio.exportVideo();
             }
         });
         fileMenu.add(exportVideoItem);
@@ -840,9 +840,45 @@ public class PCSMenuBar extends JMenuBar {
     }
     
     
+    String getAboutHTML()
+    {
+        String aboutHTML = 
+                "<html>"+
+                "<center>" +
+                "<h1>About Paul's Coloring Studio</h1>" +
+                "</center>" +
+                "<p>" +
+                "This project was started by me, Paul Soderquist, in January 2018, driven by both a passion for classic "+""+
+                "<br>" +
+                "cinema and a curiosity for what can be done to improve film colorization techniques. It is entirely written "+
+                "<br>" +
+                "and maintained by me as a nonprofit, open-source project so feel free to offer suggestions or edits but "+
+                "<br>" +
+                "please realize I am limited in the amount of time I can continue to dedicate to this. If you use this software "+
+                "<br>" +
+                "to create something cool, I’d appreciate a shoutout. :)" +
+                "</p>" +
+                "<br>" +
+                "<br>" +
+                "<p>" +
+                "The file types created in this project can only be interpreted by this program. They include:" +
+                "<br><ul><li>.pmoc (Paul’s Masked Object Coloring)</li>" +
+                "<li>.vmoc (paul’s Video Masked Object Coloring)</li><ul>" +
+                "</p>" +
+                "<br>" +
+                "<br>" +
+                "Github: https://github.com/psoder3/pauls-coloring-studio" +
+                "<br>" +
+                "Contact: paulsoderquist3@gmail.com" +
+                "</html>";
+
+        return aboutHTML;
+    }
+    
     void showAbout()
     {
-        try {
+        new AboutDialog(coloringStudio.frame,"About Paul's Coloring Studio",getAboutHTML());
+        /*try {
             JEditorPane editorPane= new JEditorPane();
             editorPane.setEditable(false);
             JScrollPane editorScrollPane = new JScrollPane(editorPane);
@@ -869,6 +905,7 @@ public class PCSMenuBar extends JMenuBar {
         } catch (IOException ex) {
             Logger.getLogger(PCSMenuBar.class.getName()).log(Level.SEVERE, null, ex);
         }
+*/
     }
     
 }

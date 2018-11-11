@@ -10,6 +10,7 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -22,6 +23,7 @@ class AboutDialog extends JDialog implements ActionListener {
     super(parent, title, true);
     JPanel messagePane = new JPanel();
     messagePane.add(new JLabel(message));
+    messagePane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     getContentPane().add(messagePane);
     JPanel buttonPane = new JPanel();
     JButton button = new JButton("OK"); 

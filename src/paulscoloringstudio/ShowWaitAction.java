@@ -15,6 +15,7 @@ import java.beans.PropertyChangeListener;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -31,15 +32,32 @@ public class ShowWaitAction extends AbstractAction {
    ActionListener a;
    String title;
    String message;
-
+   public JPanel messagePanel;
+   public JLabel messageLabel;
+   public JProgressBar progressBar;
+   
    public ShowWaitAction(String name, String dialogTitle, String dialogMessage, PaulsColoringStudio pColoringStudio, ActionListener a) {
       super(name);
       this.coloringStudio = pColoringStudio;
       this.a = a;
       this.title = dialogTitle;
       this.message = dialogMessage;
+      progressBar = new JProgressBar();
+   }
+   
+   public ShowWaitAction(String name, String dialogTitle, String dialogMessage, PaulsColoringStudio pColoringStudio) {
+      super(name);
+      this.coloringStudio = pColoringStudio;
+      this.title = dialogTitle;
+      this.message = dialogMessage;
+      progressBar = new JProgressBar();
    }
 
+   public void setWaitAction(ActionListener a)
+   {
+       this.a = a;
+   }
+   
    @Override
    public void actionPerformed(ActionEvent evt) {
       SwingWorker<Void, Void> mySwingWorker = new SwingWorker<Void, Void>(){
@@ -64,14 +82,15 @@ public class ShowWaitAction extends AbstractAction {
          }
       });
       mySwingWorker.execute();
-
-      JProgressBar progressBar = new JProgressBar();
       
       progressBar.setIndeterminate(true);
-      JPanel panel = new JPanel(new BorderLayout());
-      panel.add(progressBar, BorderLayout.CENTER);
-      panel.add(new JLabel(message), BorderLayout.PAGE_START);
-      dialog.add(panel);
+      messagePanel = new JPanel(new BorderLayout());
+      messagePanel.add(progressBar, BorderLayout.CENTER);
+      messageLabel = new JLabel(message);
+      messagePanel.add(messageLabel, BorderLayout.PAGE_START);
+      messagePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+      dialog.add(messagePanel);
       dialog.pack();
       dialog.setLocationRelativeTo(this.coloringStudio.frame);
       dialog.setVisible(true);

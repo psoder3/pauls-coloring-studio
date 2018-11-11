@@ -39,6 +39,7 @@ import java.util.Scanner;
 import javax.imageio.ImageIO;
 import javax.swing.JComboBox;
 import java.awt.BasicStroke;
+import java.awt.Desktop;
 import java.awt.EventQueue;
 import java.awt.Polygon;
 import java.awt.Stroke;
@@ -55,9 +56,11 @@ import java.beans.PropertyChangeListener;
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Stack;
+import java.util.concurrent.TimeUnit;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JDialog;
@@ -295,6 +298,21 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         if (this.saveButton.isEnabled())
         {
             String prompt = "Save before closing?";
+            int dialogButton = JOptionPane.YES_NO_OPTION;
+            int dialogResult = JOptionPane.showConfirmDialog (null, prompt,"Warning",dialogButton);
+            if(dialogResult == JOptionPane.YES_OPTION){
+              // SAVE
+              saveProject();
+            }
+            this.setEnabledSaveButtons(false);
+        }
+    }
+    
+    public void askSaveBeforeExporting()
+    {
+        if (this.saveButton.isEnabled())
+        {
+            String prompt = "Save recent changes before exporting?";
             int dialogButton = JOptionPane.YES_NO_OPTION;
             int dialogResult = JOptionPane.showConfirmDialog (null, prompt,"Warning",dialogButton);
             if(dialogResult == JOptionPane.YES_OPTION){
@@ -4015,6 +4033,183 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         alreadySaved = true;
     }
     
+    void exportVideo()
+    {
+        this.askSaveBeforeExporting();
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(lastDirectory);
+        int userSelection = fileChooser.showSaveDialog(this.frame);
+        lastDirectory = fileChooser.getCurrentDirectory();
+        boolean fileExists = true;
+        File file_to_save;
+        while (userSelection == JFileChooser.APPROVE_OPTION && fileExists) {
+            fileExists = false;
+            file_to_save = new File(fileChooser.getSelectedFile().getAbsolutePath()+".mp4");
+            String absPath = file_to_save.getAbsolutePath();
+            if (Files.exists(Paths.get(absPath))) {
+                fileExists = true;
+                new AboutDialog(this.frame,"Error","A file with that name already exists in that location");
+                userSelection = fileChooser.showSaveDialog(this.frame);
+            }
+            else
+            {  
+                startExportVideoTask(file_to_save);
+                //JDialog.setDefaultLookAndFeelDecorated(true);
+                int response = JOptionPane.showConfirmDialog(null, "Do you want to play the exported video?", "Play Video",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                if (response == JOptionPane.YES_OPTION) {
+                    try {
+                        Desktop.getDesktop().open(file_to_save);
+                    } catch (IOException ex) {
+                        Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
+                    }   
+                }
+            }
+        }
+        
+    }
+    
+    void startExportVideoTask(File file_to_save)
+    {
+        ShowWaitAction a = new ShowWaitAction("Show Wait Dialog","Exporting Video File: " + file_to_save.getAbsolutePath(), 
+                "<html>Please wait while frames are assembled to video.....<br>Estimated time: " 
+                        + ((this.lastFrame-this.firstFrame)/120+1) + " second(s)</html>",this);
+        
+        ActionListener al = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    // movie export code goes here
+                    //a.progressBar.setIndeterminate(false);
+                    a.progressBar.setMinimum(0);
+                    a.progressBar.setMaximum(100);
+                    a.progressBar.setValue(0);
+                    
+                    
+                    System.out.println(System.currentTimeMillis());
+
+                    System.out.println("Assembling Frames into Video...");
+                    String[] command1 = { 
+                        "/usr/local/bin/ffmpeg", "-y", 
+                        "-r", frameRate+"", "-f", "image2", 
+                        "-start_number", firstFrame+"",//1", 
+                        "-i", 
+                        ProjectDirectory + "Video Frame PMOCs/" + ProjectName + "-frame-%d.png",
+                        "-vframes",
+                        lastFrame-firstFrame+"",//totalFramesInVideo-1+"",       
+                        "-c:v", "libx264", "-crf", "18", 
+                        //"-acodec", "copy",
+                        "-pix_fmt", "yuv420p",
+                        "-preset",
+                        "ultrafast",
+                        "-threads",
+                        "0",
+                        "-write_xing", "0",
+                        ProjectDirectory + ProjectName + "_video.mp4"
+                        //file_to_save.getAbsolutePath()
+                        /*
+                            JUST RUN THIS COMMAND DIRECTLY ON THE COMMAND LINE. IT'S EASIER TO SEE THE PROGRESS ANYWAY
+                            /usr/local/bin/ffmpeg -r 24 -f image2 -start_number 101789 -i "Desktop/Video Frame PMOCs/video-frame-%d.png" -vframes 78 -c:v libx264 -crf 25 -pix_fmt yuv420p -write_xing 0 "Desktop/Video Frame PMOCs/testCommand_Colorized.mp4"
+                        */
+                    };
+                    
+                    
+                    
+                    Process proc = Runtime.getRuntime().exec(command1);
+
+
+                    BufferedReader stdInput = new BufferedReader(new 
+                         InputStreamReader(proc.getInputStream()));
+
+                    BufferedReader stdError = new BufferedReader(new 
+                         InputStreamReader(proc.getErrorStream()));
+                    // read the output from the command
+                    System.out.println("Here is the standard output of the command:\n");
+                    String s;
+                    while ((s = stdInput.readLine()) != null) {
+                        System.out.println(s);
+
+                    }
+
+                    // read any errors from the attempted command
+                    System.out.println("Here is the standard error of the command (if any):\n");
+                    while ((s = stdError.readLine()) != null) {
+                        System.out.println(s);
+
+                    }
+                    System.out.println("Finished assembling images to video " + file_to_save.getAbsolutePath());
+                    System.out.println(System.currentTimeMillis());
+                    
+                    
+                    String[] command2 = { 
+                        "/usr/local/bin/ffmpeg", "-y", 
+                        "-i", 
+                        ProjectDirectory + ProjectName + "_video.mp4",
+                        "-i",
+                        ProjectDirectory + ProjectName + ".aac",
+                        "-c:v", "copy", "-c:a", "aac", 
+                        "-strict",
+                        "experimental",
+                        "-map",
+                        "0:v:0",
+                        "-map",
+                        "1:a:0",
+                        file_to_save.getAbsolutePath()
+                        /*
+                            JUST RUN THIS COMMAND DIRECTLY ON THE COMMAND LINE. IT'S EASIER TO SEE THE PROGRESS ANYWAY
+                            /usr/local/bin/ffmpeg -r 24 -f image2 -start_number 101789 -i "Desktop/Video Frame PMOCs/video-frame-%d.png" -vframes 78 -c:v libx264 -crf 25 -pix_fmt yuv420p -write_xing 0 "Desktop/Video Frame PMOCs/testCommand_Colorized.mp4"
+                        */
+                    };
+                    
+                    System.out.println("Merging Video and Audio...");
+                    Process proc2 = Runtime.getRuntime().exec(command2);
+
+
+                    BufferedReader stdInput2 = new BufferedReader(new 
+                         InputStreamReader(proc2.getInputStream()));
+
+                    BufferedReader stdError2 = new BufferedReader(new 
+                         InputStreamReader(proc2.getErrorStream()));
+                    // read the output from the command
+                    System.out.println("Here is the standard output of the command:\n");
+                    
+                    while ((s = stdInput2.readLine()) != null) {
+                        System.out.println(s);
+
+                    }
+
+                    // read any errors from the attempted command
+                    System.out.println("Here is the standard error of the command (if any):\n");
+                    while ((s = stdError2.readLine()) != null) {
+                        System.out.println(s);
+
+                    }
+                    System.out.println("Finished merging video and audio " + file_to_save.getAbsolutePath());
+                    System.out.println(System.currentTimeMillis());
+
+
+
+               
+                    /*
+                    for (int i = 0; i < 10; i++)
+                    {
+                        Thread.sleep(1000);                        
+                        a.messageLabel.setText("progress: " + (i+1) + "/10");
+                        a.progressBar.setValue((int)(((i+1)/10.0)*100));
+                    }
+                    */
+                    
+                } catch (Exception ex) {
+                    Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        };
+        
+        a.setWaitAction(al);
+
+        a.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null) {});
+    }
+    
     void deselect()
     {
         canAddUndoWASD = true;
@@ -4595,13 +4790,54 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     }
     
     
+    private String millisToHHMMSSMMM(long millis)
+    {
+        String timeString = "";
+        
+        long millisPerHour = 1000 * (60 * 60);
+        long millisPerMinute = 1000 * (60);
+        long millisPerSecond = 1000;
+        
+        int hours = (int)(millis / millisPerHour);
+        millis -= (hours * millisPerHour);
+        int minutes = (int)(millis / millisPerMinute);
+        millis -= (minutes * millisPerMinute);
+        double seconds = (millis / (millisPerSecond*1.0));
+        //millis -= (seconds * millisPerSecond);
+        
+        if (hours < 10)
+        {
+            timeString += "0";
+        }
+        timeString += hours + ":";
+        if (minutes < 10)
+        {
+            timeString += "0";
+        }
+        timeString += minutes + ":";
+        if (seconds < 10)
+        {
+            timeString += "0";
+        }
+        DecimalFormat df = new DecimalFormat("#.000");
+        timeString += df.format(seconds);
+        //timeString += millis;
+        
+        return timeString;
+    }
+    
     private void extractAndSaveAudioToFile(String video_filename)
     {
-        String audio_destination = "/Users/paulsoderquist/NetBeansProjects/ImageEditor/" + "output-audio.aac";
+        String audio_destination = ProjectDirectory + File.separator + ProjectName + ".aac";
         //String audio_destination = "/Volumes/PAUL_SODERQ 1/MIDIs/" + "output-audio.aac";
+        long startingMillis = (long)(((int)(firstFrame / frameRate)*1000));
+        long durationMillis = (long)(((lastFrame-firstFrame) / frameRate)*1000);
+        String startingTime = millisToHHMMSSMMM(startingMillis);
+        String duration = millisToHHMMSSMMM(durationMillis);
         try {
             String[] command = { 
-                "/usr/local/bin/ffmpeg", "-i", video_filename, "-vn", "-codec", "copy", "-write_xing", "0", audio_destination, "-y"
+                "/usr/local/bin/ffmpeg", "-i", video_filename, "-ss", startingTime, 
+                "-t", duration, "-vn", "-codec", "copy", "-write_xing", "0", audio_destination, "-y"
             };
             
             Process proc = Runtime.getRuntime().exec(command);
@@ -5290,13 +5526,13 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             {
                 return false; 
             }
-
+            
             Current_Movie_Name = fc.getSelectedFile().getName();
             MovieFileName = Current_Movie_Name.substring(0,Current_Movie_Name.length()-4);
             String filename = fc.getSelectedFile().getAbsolutePath();
             video_filename = filename;
             System.out.println(filename);
-            totalFramesInVideo = 8;//getFrameCount(filename);
+            //totalFramesInVideo = 8;//getFrameCount(filename);
             frameRate = getFrameRate(filename);
             double duration = getDuration(filename);
             totalFramesInVideo = (int)(duration*frameRate);
@@ -5489,6 +5725,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     public void switchToFramesEditor(int numberFrames, int firstFrame)
     {
         clearObjects();
+        this.firstFrame = firstFrame;
+        this.lastFrame = firstFrame + numberFrames;
         this.editorPanel.setFrameGrabEnabled(false);
         this.menuBar.saveProjectAsItem.setEnabled(false);
         this.menuBar.applyToAllFramesItem.setEnabled(true);
@@ -5521,10 +5759,15 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     }
     
     void grabNextFrames(int numberFrames, int firstFrame) {
+        this.firstFrame = firstFrame;
+        this.lastFrame = firstFrame + numberFrames;
         Action a = new ShowWaitAction("Show Wait Dialog","Grabbing Frames", 
                 "Please wait while frames are grabbed.....",this,new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                
+                extractAndSaveAudioToFile(video_filename);
+                
                 FileWriter fw = null;
                 try {
                     /*File f = new File("Video Frame PMOCs" + File.separator + Current_Movie_Name + ".vmoc");
