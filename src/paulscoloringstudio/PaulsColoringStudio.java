@@ -4090,7 +4090,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
 
                     System.out.println("Assembling Frames into Video...");
                     String[] command1 = { 
-                        "/usr/local/bin/ffmpeg", "-y", 
+                        System.getProperty("user.dir") + File.separator + "ffmpeg", "-y", 
                         "-r", frameRate+"", "-f", "image2", 
                         "-start_number", firstFrame+"",//1", 
                         "-i", 
@@ -4142,7 +4142,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     
                     
                     String[] command2 = { 
-                        "/usr/local/bin/ffmpeg", "-y", 
+                        System.getProperty("user.dir") + File.separator + "ffmpeg", "-y", 
                         "-i", 
                         ProjectDirectory + ProjectName + "_video.mp4",
                         "-i",
@@ -4674,7 +4674,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     {
         try {
             String[] command = { 
-                "/usr/local/bin/ffmpeg","-i",filename
+                System.getProperty("user.dir") + File.separator + "ffmpeg","-i",filename
             };
             
             Process proc = Runtime.getRuntime().exec(command);
@@ -4729,7 +4729,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         double total_seconds = 0.0;
         try {
             String[] command = { 
-                "/usr/local/bin/ffmpeg","-i",filename
+                System.getProperty("user.dir") + File.separator + "ffmpeg","-i",filename
             };
             
             Process proc = Runtime.getRuntime().exec(command);
@@ -4836,7 +4836,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         String duration = millisToHHMMSSMMM(durationMillis);
         try {
             String[] command = { 
-                "/usr/local/bin/ffmpeg", "-i", video_filename, "-ss", startingTime, 
+                System.getProperty("user.dir") + File.separator + "ffmpeg", "-i", video_filename, "-ss", startingTime, 
                 "-t", duration, "-vn", "-codec", "copy", "-write_xing", "0", audio_destination, "-y"
             };
             
