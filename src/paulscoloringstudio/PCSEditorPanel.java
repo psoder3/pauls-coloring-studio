@@ -763,6 +763,9 @@ public class PCSEditorPanel extends JPanel {
                             File vmocFile = new File(absPath + File.separator + fileToSave.getName() + ".vmoc");
                             Files.createDirectories(Paths.get(absPath+File.separator+"Video Frame PMOCs"));
                             FileWriter fw = new FileWriter(vmocFile);
+                            
+                            coloringStudio.findExactFrame();
+                            
                             fw.append(video_current_value + " " + numberFrames);
                             fw.close();
                             

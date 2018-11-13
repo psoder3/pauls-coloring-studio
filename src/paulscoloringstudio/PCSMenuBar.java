@@ -552,7 +552,7 @@ public class PCSMenuBar extends JMenuBar {
         backSpace.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                coloringStudio.deletePoint();
+                coloringStudio.delete();
                 if (!coloringStudio.saveButton.isEnabled())
                 {
                     coloringStudio.setEnabledSaveButtons(true);
