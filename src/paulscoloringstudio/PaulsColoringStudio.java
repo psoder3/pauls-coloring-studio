@@ -4832,7 +4832,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         
         String audio_destination = ProjectDirectory + File.separator + ProjectName + ".aac";
         //double startingSeconds = ((firstFrame*1.0) / this.totalFramesInVideo) * total_movie_duration;
-        double startingSeconds = (((firstFrame+1) / frameRate)) * 1.00017; // MAGIC NUMBERS MAKE MAGIC HAPPEN
+        double startingSeconds = (((firstFrame+1) / frameRate)) * 1.00016; // MAGIC NUMBERS MAKE MAGIC HAPPEN
         double durationSeconds = ((lastFrame-firstFrame) / frameRate);
         //String startingTime = millisToHHMMSSMMM(startingMillis);
         //String duration = millisToHHMMSSMMM(durationMillis);
