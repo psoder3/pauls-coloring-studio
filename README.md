@@ -10,7 +10,8 @@ For a quick look at some of the things I've been able to create, I invite you to
 https://sites.google.com/view/coloringhollywood/home
 
 Instructions for running this program:
-Download the entire repository (you need the libraries and ffmpeg executables in order to use certain features of the application).
-Extract the zip folder.
-Run the file named "PaulsColoringStudio.jar".
+1. Download the entire repository (you need the libraries and ffmpeg executables in order to use certain features of the application).
+2. Extract the zip folder.
+3. Run the file named "PaulsColoringStudio.jar".
+
 There are more specific instructions for how to use the application in the Help menu.
