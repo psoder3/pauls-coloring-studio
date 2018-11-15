@@ -60,39 +60,64 @@ public class ShowWaitAction extends AbstractAction {
    
    @Override
    public void actionPerformed(ActionEvent evt) {
+       System.out.println("Wait Action actionPerformed 1");
       SwingWorker<Void, Void> mySwingWorker = new SwingWorker<Void, Void>(){
          @Override
          protected Void doInBackground() throws Exception {
+                   System.out.println("Wait Action actionPerformed doInBackground 1");
             a.actionPerformed(new ActionEvent(ShowWaitAction.this.coloringStudio, ActionEvent.ACTION_PERFORMED, null) {});
+                   System.out.println("Wait Action actionPerformed doInBackground 2");
+
             return null;
          }
       };
+       System.out.println("Wait Action actionPerformed 2");
 
       final JDialog dialog = new JDialog(this.coloringStudio.frame, title, ModalityType.APPLICATION_MODAL);
+       System.out.println("Wait Action actionPerformed 3");
+      dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+       System.out.println("Wait Action actionPerformed 4");
 
       mySwingWorker.addPropertyChangeListener(new PropertyChangeListener() {
 
          @Override
          public void propertyChange(PropertyChangeEvent evt) {
             if (evt.getPropertyName().equals("state")) {
-               if (evt.getNewValue() == SwingWorker.StateValue.DONE) {
+                System.out.println("Wait Action actionPerformed propertyChange 1");
+
+                if (evt.getNewValue() == SwingWorker.StateValue.DONE) {
+                   System.out.println("Wait Action actionPerformed propertyChange 2");
+                   
                   dialog.dispose();
+                    System.out.println("Wait Action actionPerformed propertyChange 3");
                }
             }
          }
       });
+       System.out.println("Wait Action actionPerformed 5");
       mySwingWorker.execute();
+       System.out.println("Wait Action actionPerformed 6");
       
       progressBar.setIndeterminate(true);
+       System.out.println("Wait Action actionPerformed 7");
       messagePanel = new JPanel(new BorderLayout());
+       System.out.println("Wait Action actionPerformed 8");
       messagePanel.add(progressBar, BorderLayout.CENTER);
+       System.out.println("Wait Action actionPerformed 9");
       messageLabel = new JLabel(message);
+       System.out.println("Wait Action actionPerformed 10");
       messagePanel.add(messageLabel, BorderLayout.PAGE_START);
+       System.out.println("Wait Action actionPerformed 11");
       messagePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+       System.out.println("Wait Action actionPerformed 12");
 
       dialog.add(messagePanel);
+       System.out.println("Wait Action actionPerformed 13");
       dialog.pack();
+       System.out.println("Wait Action actionPerformed 14");
       dialog.setLocationRelativeTo(this.coloringStudio.frame);
+       System.out.println("Wait Action actionPerformed 15");
       dialog.setVisible(true);
+       System.out.println("Wait Action actionPerformed 16");
    }
 }

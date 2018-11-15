@@ -5,8 +5,10 @@
  */
 package paulscoloringstudio;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
@@ -109,8 +111,11 @@ public class PCSEditorPanel extends JPanel {
     int video_frame_initial = 0;
     int video_current_value = 0;
     
-    JButton beginFramesButton = new JButton("Grab Frames For Editing");
-    JTextField numFramesField = new JTextField(3);
+    JLabel numFramesLabel;
+    
+    JButton beginFramesButton = new JButton("Grab Frames");
+    //JTextField numFramesField = new JTextField(15);
+    
     
     
     JLabel idLbl = new JLabel("   Object ID");
@@ -126,6 +131,8 @@ public class PCSEditorPanel extends JPanel {
     ChangeListener framesSpinnerCL;
     ChangeListener videoSliderCL;
     ChangeListener frameSliderCL;
+    
+    JSpinner number_frames_spinner;
     
     
     Rectangle rectangle;
@@ -162,6 +169,21 @@ public class PCSEditorPanel extends JPanel {
     public PCSEditorPanel(PaulsColoringStudio pColoringStudio)
     {
         super();
+        
+        SpinnerModel number_frames_model =
+        new SpinnerNumberModel(1, //initial value
+                               1, //min
+                               10000, //max
+                               1);                //step
+        number_frames_spinner = new JSpinner(number_frames_model);
+        
+//        number_frames_spinner.addChangeListener(new ChangeListener() {
+//            @Override
+//            public void stateChanged(ChangeEvent e) {
+//                
+//            }
+//        });
+        
         colorPanel = new JPanel();
         frameNavigatorPanel = new JPanel();
         JPanel depthPanel = new JPanel();
@@ -649,7 +671,6 @@ public class PCSEditorPanel extends JPanel {
         // -----------------------
         // Video Frame
         // -----------------------
-        JPanel video_frame_panel = new JPanel();
         //JLabel video_frame_label = new JLabel("Frame");
         video_frame_slider = new JSlider(JSlider.HORIZONTAL,video_frame_min,video_frame_max,video_frame_initial);
         SpinnerModel video_frame_model =
@@ -718,7 +739,7 @@ public class PCSEditorPanel extends JPanel {
         //video_frame_panel.add(video_frame_label);
         
 
-        
+        /*
         numFramesField.addFocusListener(new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -736,11 +757,15 @@ public class PCSEditorPanel extends JPanel {
                 }
             }
         });
-        numFramesField.setText("5");
+        */
+        //numFramesField.setText("5");
         beginFramesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int numberFrames = Integer.parseInt(numFramesField.getText());
+                
+                //int numberFrames = Integer.parseInt(numFramesField.getText());
+                int numberFrames = (int)(number_frames_spinner.getValue());
+                                
                 JFileChooser fileChooser = new JFileChooser();
 
 		int userSelection = fileChooser.showSaveDialog(coloringStudio.frame);
@@ -756,48 +781,82 @@ public class PCSEditorPanel extends JPanel {
                     }
                     else
                     {
-                        try {
+                        System.out.println("BeginFramesButton Action Performed 1");
+                        coloringStudio.findExactFrame();
+                        System.out.println("BeginFramesButton Action Performed 2");
+                        try 
+                        {
+                            System.out.println("BeginFramesButton Action Performed 3");
                             Files.createDirectories(Paths.get(absPath));
+                            System.out.println("BeginFramesButton Action Performed 4");
                             coloringStudio.ProjectName = fileToSave.getName();
+                            System.out.println("BeginFramesButton Action Performed 5");
                             coloringStudio.ProjectDirectory = absPath + File.separator;
+                            System.out.println("BeginFramesButton Action Performed 6");
                             File vmocFile = new File(absPath + File.separator + fileToSave.getName() + ".vmoc");
+                            System.out.println("BeginFramesButton Action Performed 7");
                             Files.createDirectories(Paths.get(absPath+File.separator+"Video Frame PMOCs"));
+                            System.out.println("BeginFramesButton Action Performed 8");
                             FileWriter fw = new FileWriter(vmocFile);
-                            
-                            coloringStudio.findExactFrame();
-                            
-                            fw.append(video_current_value + " " + numberFrames);
+                            System.out.println("BeginFramesButton Action Performed 9");
+
+
+                            fw.append(video_current_value + " " + numberFrames + " " + coloringStudio.frameRate);
+                            System.out.println("BeginFramesButton Action Performed 10");
                             fw.close();
-                            
+                            System.out.println("BeginFramesButton Action Performed 11");
+
                             pColoringStudio.grabNextFrames(numberFrames,video_current_value);
+                            System.out.println("BeginFramesButton Action Performed 12");
                             pColoringStudio.setVideoFrameAlreadySaved(video_current_value+1);
-                        } catch (IOException ex) {
+                            System.out.println("BeginFramesButton Action Performed 13");
+
+
+
+                        } catch (IOException ex) 
+                        {
                             Logger.getLogger(PCSEditorPanel.class.getName()).log(Level.SEVERE, null, ex);
                         }
+
                     }
                 } 
             }
         });
         
-        grabFramesPanel = new JPanel();
-        grabFramesPanel.add(beginFramesButton);
-        grabFramesPanel.add(numFramesField);
+        
+
         
         frameLbl = new JLabel("Frame Navigator");
         JPanel video_slider_panel = new JPanel();
         
+        JPanel video_frame_panel = new JPanel();
+        JPanel video_grab_panel = new JPanel();
+
         video_frame_panel.setLayout(new BoxLayout(video_frame_panel, BoxLayout.PAGE_AXIS));
         video_slider_panel.add(video_frame_slider);
         video_slider_panel.add(video_frame_spinner);
         video_frame_panel.add(frameLbl);
         video_frame_panel.add(video_slider_panel);
+
+        numFramesLabel = new JLabel("Number of frames to grab:");
+        grabFramesPanel = new JPanel();
+
+        //video_grab_panel.setLayout(new BoxLayout(video_grab_panel, BoxLayout.PAGE_AXIS));
+        video_grab_panel.setLayout(new GridLayout(2,1));
+        //grabFramesPanel.add(numFramesField);
+        //grabFramesPanel.add(beginFramesButton);
+        grabFramesPanel.add(numFramesLabel);
+        grabFramesPanel.add(number_frames_spinner);
+        video_grab_panel.add(grabFramesPanel);
+        video_grab_panel.add(beginFramesButton);
+
         
         frameNavigatorPanel.setLayout(new GridLayout(2,1));
         //frameNavigatorPanel.setLayout(new BoxLayout(frameNavigatorPanel, BoxLayout.PAGE_AXIS));
 
         
         frameNavigatorPanel.add(video_frame_panel);
-        frameNavigatorPanel.add(grabFramesPanel);
+        frameNavigatorPanel.add(video_grab_panel);
 
         /*
         // -----------------------
@@ -973,20 +1032,25 @@ public class PCSEditorPanel extends JPanel {
     
     void setFrameGrabEnabled(boolean enabled)
     {
+        this.numFramesLabel.setEnabled(enabled);
         this.beginFramesButton.setEnabled(enabled);
-        this.numFramesField.setEnabled(enabled);
+        //this.numFramesField.setEnabled(enabled);
+        this.number_frames_spinner.setEnabled(enabled);
     }
     
     void swapToFrameChangeListener() {
         video_frame_spinner.removeChangeListener(videoSpinnerCL);
         video_frame_spinner.addChangeListener(framesSpinnerCL);
+        video_frame_slider.removeChangeListener(videoSliderCL);
+        video_frame_slider.addChangeListener(frameSliderCL);
 
     }
     
     void swapToVideoChangeListener() {
         video_frame_spinner.removeChangeListener(framesSpinnerCL);
         video_frame_spinner.addChangeListener(videoSpinnerCL);
-
+        video_frame_slider.removeChangeListener(frameSliderCL);
+        video_frame_slider.addChangeListener(videoSliderCL);
     }
     
     public Color getColor()

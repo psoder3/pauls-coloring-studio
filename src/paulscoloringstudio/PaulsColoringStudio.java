@@ -280,7 +280,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     public Image selected_image = null;
     //private File selected_file = new File("/Users/paulsoderquist/Documents/trainingImages/jimmy-stewart-rope.jpg");
     File selected_file;// = new File("C:\\Users\\psoderquist\\Documents\\NetBeansProjects\\Image-Filters-master\\Image-Filters-master\\faveWife.png");
-
+    String ffmpegExecutable = "ffmpeg";
     
     public PaulsColoringStudio() {
         //this.colorChooser = new ColorChooserButton(Color.WHITE, this);
@@ -288,7 +288,12 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
 
         loadRecentFiles();
         menuBar = new PCSMenuBar(this);
+        String os = (System.getProperty("os.name"));
         
+        if (os.charAt(0) == 'w' || os.charAt(0) == 'W') // Checking if this is a Windows machine
+        {
+            ffmpegExecutable = "ffmpeg.exe";
+        }
         
         
     }
@@ -4073,8 +4078,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     void startExportVideoTask(File file_to_save)
     {
         ShowWaitAction a = new ShowWaitAction("Show Wait Dialog","Exporting Video File: " + file_to_save.getAbsolutePath(), 
-                "<html>Please wait while frames are assembled to video.....<br>Estimated time: " 
-                        + ((this.lastFrame-this.firstFrame)/120+1) + " second(s)</html>",this);
+                "<html>Please wait while frames are assembled to video.....<br>This may take several minutes</html>",this);
         
         ActionListener al = new ActionListener() {
             @Override
@@ -4089,10 +4093,12 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     
                     System.out.println(System.currentTimeMillis());
 
+                    
+                    
                     System.out.println("Assembling Frames into Video...");
                     String[] command1 = { 
-                        System.getProperty("user.dir") + File.separator + "ffmpeg", "-y", 
-                        "-r", frameRate+"", "-f", "image2", 
+                        System.getProperty("user.dir") + File.separator + ffmpegExecutable, "-y", 
+                        "-r", frameRate +"", "-f", "image2", 
                         "-start_number", firstFrame+"",//1", 
                         "-i", 
                         ProjectDirectory + "Video Frame PMOCs/" + ProjectName + "-frame-%d.png",
@@ -4143,7 +4149,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     
                     
                     String[] command2 = { 
-                        System.getProperty("user.dir") + File.separator + "ffmpeg", "-y", 
+                        System.getProperty("user.dir") + File.separator + ffmpegExecutable, "-y", 
                         "-i", 
                         ProjectDirectory + ProjectName + "_video.mp4",
                         "-i",
@@ -4671,11 +4677,11 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
 
     }
     
-    double getFrameRate(String filename)
+    double getFrameRateFromVideoFile(String filename)
     {
         try {
             String[] command = { 
-                System.getProperty("user.dir") + File.separator + "ffmpeg","-i",filename
+                System.getProperty("user.dir") + File.separator + ffmpegExecutable,"-i",filename
             };
             
             Process proc = Runtime.getRuntime().exec(command);
@@ -4730,7 +4736,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         double total_seconds = 0.0;
         try {
             String[] command = { 
-                System.getProperty("user.dir") + File.separator + "ffmpeg","-i",filename
+                System.getProperty("user.dir") + File.separator + ffmpegExecutable,"-i",filename
             };
             
             Process proc = Runtime.getRuntime().exec(command);
@@ -4838,7 +4844,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         //String duration = millisToHHMMSSMMM(durationMillis);
         try {
             String[] command = { 
-                System.getProperty("user.dir") + File.separator + "ffmpeg", "-i", video_filename, "-ss", startingSeconds+"", 
+                System.getProperty("user.dir") + File.separator + ffmpegExecutable, "-i", video_filename, "-ss", startingSeconds+"", 
                 "-t", durationSeconds+"", "-vn", "-codec", "copy", "-write_xing", "0", audio_destination, "-y"
             };
             
@@ -4973,7 +4979,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         String filename = fc.getSelectedFile().getAbsolutePath();
         extractAndSaveAudioToFile(filename);
         //System.out.println(filename);
-        frameRate = getFrameRate(filename);
+        frameRate = getFrameRateFromVideoFile(filename);
         totalFramesInVideo = getFrameCount(filename);
         lastFrame = totalFramesInVideo-1;
         // If I want to render part of a video give a percent (of video) for first and last frame
@@ -5465,6 +5471,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     Scanner file_in = new Scanner(vmocFile);
                     int fFrame = file_in.nextInt();
                     int numFrames = file_in.nextInt();
+                    double fps = file_in.nextDouble();
+                    frameRate = fps;
                     switchToFramesEditor(numFrames, fFrame);
                     this.editorPanel.setVideoNavigationEnabled(true);
 
@@ -5535,7 +5543,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             video_filename = filename;
             System.out.println(filename);
             //totalFramesInVideo = getFrameCount(filename);
-            frameRate = getFrameRate(filename);
+            frameRate = getFrameRateFromVideoFile(filename);
             total_movie_duration = getDuration(filename);
             totalFramesInVideo = (int)(total_movie_duration*frameRate);
             changeSpinnerActionListeners("video");
@@ -5575,8 +5583,13 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                                 g.stop();
                             }
                             g = new FFmpegFrameGrabber(video_filename);
+                            try{
                             g.start();
-
+                            }
+                            catch (Exception esdf)
+                            {
+                                System.out.println(esdf.toString());
+                            }
                             editorPanel.video_frame_slider.setValue(1);
                             //setCurrentFrame(1);
                             leftRight = image_pixels.getWidth()/2;
@@ -5590,7 +5603,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                                 }
                              });
                             
-                        } catch (FrameGrabber.Exception ex) {
+                        } catch (Exception ex) {
                             Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
                         }
 
@@ -5652,7 +5665,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     {
         new AboutDialog(this.frame,
                 "Directions",
-                "Use the frame navigator to pick a starting frame, then specify the number of frames you want to grab before clicking \"Grab Frames For Editing.\"");
+                "<html>Use the frame navigator to pick a starting frame, then specify the <br>"
+                        + "number of frames you want to grab before clicking \"Grab Frames\".</html>");
         
     }
     
@@ -5662,13 +5676,15 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         {
             editorPanel.swapToFrameChangeListener();
             editorPanel.beginFramesButton.setEnabled(false);
-            editorPanel.numFramesField.setEnabled(false);
+            //editorPanel.numFramesField.setEnabled(false);
+            editorPanel.number_frames_spinner.setEnabled(false);
         }
         else if (type.equals("video"))
         {
             editorPanel.swapToVideoChangeListener();
             editorPanel.beginFramesButton.setEnabled(true);
-            editorPanel.numFramesField.setEnabled(true);
+            //editorPanel.numFramesField.setEnabled(true);
+            editorPanel.number_frames_spinner.setEnabled(true);
         }
         editorPanel.repaint();
         repaint();
@@ -5762,6 +5778,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     
     void findExactFrame()
     {
+        System.out.println("Find Exact Frame 1");
         ShowWaitAction a = new ShowWaitAction("Show Wait Dialog","Finding Exact Index of Starting Frame", 
                 "<html>Please wait while Paul's Coloring Studio counts up to the exact starting frame because the<br>"
                     + "developers of FFMPEGFrameGrabber apparently didn't create a way to navigate to exact frames.<br><br>"
@@ -5769,17 +5786,25 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     + "This is absolutely essential in order to correctly synchronize the audio with the video<br>"
                     + "when exporting."
                     + "</html>",this);
-        
+        System.out.println("Find Exact Frame 2");
+
         ActionListener al = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
+                    System.out.println("Find Exact Frame Action Performed 1");
                     g.setFrameNumber(0);
+                    System.out.println("Find Exact Frame Action Performed 2");
                     a.progressBar.setIndeterminate(false);
+                    System.out.println("Find Exact Frame Action Performed 3");
                     a.progressBar.setMinimum(0);
+                    System.out.println("Find Exact Frame Action Performed 4");
                     a.progressBar.setMaximum(editorPanel.video_current_value);
+                    System.out.println("Find Exact Frame Action Performed 5");
                     BufferedImage copy = getImageCopy(image_pixels);
+                    System.out.println("Find Exact Frame Action Performed 6");
                     for (int i = 0 ; i < PaulsColoringStudio.this.totalFramesInVideo; i++) {
+                        System.out.println("Find Exact Frame Action Performed 7."+i);
                         BufferedImage bi = g.grab().getBufferedImage();
                         if (i % 100 == 0)
                         {
@@ -5788,10 +5813,14 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                         }
                         if (bufferedImagesEqual(copy,bi))
                         {
-                            System.out.println("Found the image");
+                            System.out.println("Find Exact Frame Action Performed 8");
+                        
+                            //System.out.println("Found the image");
                             editorPanel.video_current_value = i;
+                            System.out.println("Find Exact Frame Action Performed 9");
                             a.progressBar.setValue(100);
                             image_pixels = toBufferedImage(selected_image);
+                            System.out.println("Find Exact Frame Action Performed 10");
                             repaint();
                             return;
                         }
@@ -5801,10 +5830,13 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 }
             }
         };
-        
-        a.setWaitAction(al);
+        System.out.println("Find Exact Frame 3");
 
+        a.setWaitAction(al);
+        System.out.println("Find Exact Frame 4");
         a.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null) {});
+        System.out.println("Find Exact Frame 5");
+
     }
     
     
@@ -5824,61 +5856,72 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     
     void grabNextFrames(int numberFrames, int firstFrame) {
         
-        
+        System.out.println("grabNextFrames 1");
         
         this.firstFrame = firstFrame;
+        System.out.println("grabNextFrames 2");
         this.lastFrame = firstFrame + numberFrames;
+        System.out.println("grabNextFrames 3");
         ShowWaitAction a = new ShowWaitAction("Show Wait Dialog","Grabbing Frames", 
                 "Please wait while frames are grabbed.....",this);
+        System.out.println("grabNextFrames 4");
         ActionListener al = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                
+                System.out.println("grabNextFrames actionPerformed 1");
                 extractAndSaveAudioToFile(video_filename);
+                System.out.println("grabNextFrames actionPerformed 2");
                 a.progressBar.setIndeterminate(false);
+                System.out.println("grabNextFrames actionPerformed 3");
                 a.progressBar.setMinimum(0);
+                System.out.println("grabNextFrames actionPerformed 4");
                 a.progressBar.setMaximum(100);
-                FileWriter fw = null;
+                System.out.println("grabNextFrames actionPerformed 5");
                 try {
-                    /*File f = new File("Video Frame PMOCs" + File.separator + Current_Movie_Name + ".vmoc");
-                    fw = new FileWriter(f);
-                    fw.append(firstFrame + " " + numberFrames);
-                    fw.close();*/
+                    
+                    int actualNumberFrames = numberFrames;
+                    System.out.println("grabNextFrames actionPerformed 6");
                     for (int i = 0 ; i < numberFrames; i++) {
+                        System.out.println("grabNextFrames actionPerformed 7" + i);
                         a.progressBar.setValue((int)(i*100.0/numberFrames));
                         repaint();
                         try {
-                            BufferedImage bi = g.grab().getBufferedImage();
-
+                            IplImage ii = g.grab();
+                            if (ii == null)
+                            {
+                                actualNumberFrames = i;
+                                File vmocFile = new File(ProjectDirectory + File.separator + ProjectName + ".vmoc");
+                                FileWriter fw = new FileWriter(vmocFile);
+                                fw.append(firstFrame + " " + actualNumberFrames + " " + frameRate);
+                                fw.close();
+                                break;
+                            }
+                            BufferedImage bi = ii.getBufferedImage();
+                            
                             selected_image = bi;
                             image_pixels = toBufferedImage(selected_image);
                             String imageFileName = ProjectDirectory + File.separator + "Video Frame PMOCs" + File.separator + ProjectName + "-frame-" + (i+1+firstFrame) + ".png";
                             ImageIO.write(image_pixels, "png", new File(imageFileName));
 
-                            //ImageIO.write(g.grab().getBufferedImage(), "png",
-                            //        new File(Current_Movie_Name.substring(0, Current_Movie_Name.length()-4)
-                            //                +"/video-frame-" + i + ".png"));
-                        } catch (IOException | FrameGrabber.Exception ex) {
+                            
+                        } catch (Exception ex) {
                             Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
+                            actualNumberFrames = i;
                         }
                     }   
-                    switchToFramesEditor(numberFrames, firstFrame);
-                    editorPanel.video_frame_slider.setMaximum(firstFrame+numberFrames);
-                    editorPanel.video_frame_slider.setMinimum(firstFrame+1);
-                    editorPanel.video_frame_slider.setValue(firstFrame+1);
-                    editorPanel.video_frame_spinner.setModel(new SpinnerNumberModel(firstFrame+1, //initial value
-                            firstFrame+1, //min
-                            firstFrame+numberFrames, //max
-                            1));
-                    //changeSpinnerActionListeners("frame");
+                    System.out.println("grabNextFrames actionPerformed 8");
+                    switchToFramesEditor(actualNumberFrames, firstFrame);
+                    System.out.println("grabNextFrames actionPerformed 9");
+                
 
                     editorPanel.repaint();
-                //} catch (IOException ex) {
-                 //   Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
+                
                 } finally {
 
                     try {
+                        System.out.println("grabNextFrames actionPerformed 10");
                         g.stop();
+                        System.out.println("grabNextFrames actionPerformed 11");
                     } catch (FrameGrabber.Exception ex) {
                         Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -5886,10 +5929,13 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 }
             }
         };
+        System.out.println("grabNextFrames 5");
 
         a.setWaitAction(al);
-        
+        System.out.println("grabNextFrames 6");
+      
         a.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null) {});
+        System.out.println("grabNextFrames 7");
 
 
         
