@@ -1,0 +1,53 @@
+<html>
+<center>
+<h1>How to use Paul's Coloring Studio</h1>
+</center>
+<h2>
+Working with an Image:
+</h2>
+<ul>
+		<li>To cycle through selecting each object in order of creation press keys 1 (previous) or 2 (next). This could be useful if your object is such that it can’t be selected by clicking on it.
+		<li>To translate view, use arrow keys, or mouse middle click and drag.</li>
+		<li>To zoom in/zoom out use +, - keys, or mouse scroll wheel.</li>
+		<li>To create a new image project, click “New Image Project” and select an image file to recolor.</li>
+		<li>Common Error: if the image you select doesn’t color, it was most likely in formatted in “grayscale” mode and must first be converted to “RGB” mode in an external editor such as GIMP.</li>
+		<li>To open an existing image project, click "Open Image Project" and select the .pmoc file (it must be in the same folder as the .png file with the same name).</li>
+		<li>To create a new outlined object, deselect all and switch to vertex mode. Start clicking and dragging points.</li>
+		<li>To edit an existing outlined object, first make sure it is selected.</li>
+		<li>To select an outlined object, change to “Select Polygon Mode”.</li>
+		<li>To select a region of points or objects, use either “Drag Select Objects” or “Drag Select Vertices” mode.</li>
+		<li>To select an individual point, change to Vertex Mode, and click on a point on the selected object.</li>
+		<li>To move a selected point or selected region use [w, a, s, d] for [up, left, down, right].</li>
+		<li>You can also click and drag individual points to move them (only in Vertex Mode).</li>
+		<li>To delete the selected point from the selected object, press backspace. (in Vertex Mode)</li>
+		<li>To delete an object, delete all the points of the object</li>
+		<li>To change the color of an outlined object, make sure you have it selected and start manipulating the HSV color sliders.</li>
+		<li>To manually invoke a recoloring of an outlined object after manipulating its points or depth, simply reselect the object or click "Recolor Selection".</li>
+		<li>To manually invoke a recoloring of the entire image after manipulating an object’s points or depth, click “Recolor”, (These types of changes aren’t automatically applied. Live color change updates for the entire image proved to be ridiculously inefficient.)</li>
+		<li>To specify priority in coloring where objects overlap, you may increase or decrease an object’s depth using the field labeled “Object Depth”.</li>
+		<li>For a more natural looking variation in color (skin and hair perhaps), try manipulating the hue and saturation variation sliders.</li>
+		<li>For advanced tasks you can involve a secondary color and manipulate the threshold value that divides the two colors using the “secondary” slider.</li>
+		<li>Because many borders are shared among objects, I’ve added a hover-and-click autocomplete feature for a path of connected vertices of an adjacent object. You can enable this feature by using Cmd-M/Ctrl-M or by clicking Edit->"Turn Auto-Complete Border On". To change the direction of the auto-completed border, use Cmd-R/Ctrl-R or click Edit->"Reverse Auto-Complete Direction".</li>
+		<li>To undo use Cmd-Z/Ctrl-Z or Edit->Undo.</li>
+		<li>To redo use Cmd-Y/Ctrl-Y or Edit->Redo.</li>
+		<li>As soon as you've undone/redone everything you want, you may then have to click "Recolor". (This is because it doesn't automatically recolor edits that involve more than one object. Again, that proved to be too slow in many cases)</li>
+</ul>
+<h2>
+Working with a Video:
+</h2>
+<ul>
+		<li>To load an existing video coloring project, click “Load Video Project” and find and select a .vmoc file. (It must be inside of a project folder of the same name)</li>
+		<li>To create a new video coloring project, click create video project and find and select a new video file (such as an mp4).</li>
+		<li>You will be given the option to move a slider to a starting point in the video and select a number of frames to “grab”.</li>
+		<li>This process may take a while for two reasons. First, it has to read each frame up to the chosen starting frame. (Depending on the size of the video this could be up to 15 minutes.) Then it has to create and save an image file for each frame of the video you will be editing</li>
+		<li>When it finishes you may begin working on each individual image (see instructions/help above for working with an image).</li>
+		<li>For each image frame you must manually save your work if you don’t want to lose it when you navigate to another frame.</li>
+		<li>You can save an individual frame by clicking “Save Frame”.</li>
+		<li>You can navigate between frames by using the Video Frame slider.</li>
+		<li>By default, navigating to a new video frame that has not yet been saved will retain the object outlines that existed from the previous frame.</li>
+		<li>This enables you to work efficiently on consecutive frames that are very similar by only having to make slight modifications each time.</li>
+		<li>To make all frames’ colors match a particular frame’s colors, (for example, you’ve already colored several frames and want to change the color of a hat without tediously editing each frame) click the “Apply Frame to All” button. This feature only works, however, if every object in one frame exists in every other frame.</li>
+		<li>To render a finished set of frames to video, click export video and selection a destination and name (you don't need to include the extension. It will save as an .mp4 file)</li>
+		<li>Some experimental features for video that may be of use are accessible through the Edit menu options “Track Motion” and “Find Edges”. Before using these features, however, you must select the objects or vertices you want to be affected by the action.</li>
+</ul>
+</html>
