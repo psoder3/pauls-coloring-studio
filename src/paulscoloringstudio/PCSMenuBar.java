@@ -6,6 +6,8 @@
 package paulscoloringstudio;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -14,8 +16,12 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JMenu;
@@ -23,6 +29,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
+import static javax.swing.WindowConstants.DISPOSE_ON_CLOSE;
 
 /**
  *
@@ -85,6 +92,7 @@ public class PCSMenuBar extends JMenuBar {
     
     JMenuItem basicTutorial;
     JMenuItem aboutItem;
+    JMenuItem onlineHelp;
     
     
     PCSMenuBar(PaulsColoringStudio pColoringStudio)
@@ -805,20 +813,60 @@ public class PCSMenuBar extends JMenuBar {
             }
         });
         helpMenu.add(aboutItem);
+        
+        onlineHelp = new JMenuItem("Online Help");
+        onlineHelp.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                URL url;
+                try {
+                    url = new URL("http://104.236.169.62/pauls-coloring-studio");
+                    openWebpage(url);
+                } catch (MalformedURLException ex) {
+                    Logger.getLogger(PCSMenuBar.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
+        helpMenu.add(onlineHelp);
     }
     
+    
+    public boolean openWebpage(URI uri) {
+        Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+        if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+            try {
+                desktop.browse(uri);
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return false;
+    }
+
+    public boolean openWebpage(URL url) {
+        try {
+            return openWebpage(url.toURI());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
     
     void showInstructions()
     {
         try {
             JEditorPane editorPane= new JEditorPane();
             editorPane.setEditable(false);
+            editorPane.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
             JScrollPane editorScrollPane = new JScrollPane(editorPane);
             editorScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
             File file = new File("Resources" + File.separator + "help.html");
             editorPane.setPage(file.toURI().toURL());
             
             JDialog helpDialog = new JDialog();
+            helpDialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+
             helpDialog.add(editorScrollPane, BorderLayout.CENTER);
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             int help_width = (int)(screenSize.getWidth()*.6);
@@ -867,9 +915,13 @@ public class PCSMenuBar extends JMenuBar {
                 "</p>" +
                 "<br>" +
                 "<br>" +
+                "<p>" + 
+                "Developer's Gallery: https://sites.google.com/view/coloringhollywood/home" +
+                "<br>" +
                 "Github: https://github.com/psoder3/pauls-coloring-studio" +
                 "<br>" +
                 "Contact: paulsoderquist3@gmail.com" +
+                "</p>" +
                 "</html>";
 
         return aboutHTML;
@@ -877,20 +929,24 @@ public class PCSMenuBar extends JMenuBar {
     
     void showAbout()
     {
-        new AboutDialog(coloringStudio.frame,"About Paul's Coloring Studio",getAboutHTML());
-        /*try {
+        //new AboutDialog(coloringStudio.frame,"About Paul's Coloring Studio",getAboutHTML());
+        try {
             JEditorPane editorPane= new JEditorPane();
             editorPane.setEditable(false);
+            editorPane.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
+            
+
             JScrollPane editorScrollPane = new JScrollPane(editorPane);
             editorScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
             File file = new File("Resources" + File.separator + "about.html");
             editorPane.setPage(file.toURI().toURL());
             
             JDialog helpDialog = new JDialog();
+            helpDialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
             helpDialog.add(editorScrollPane, BorderLayout.CENTER);
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             int help_width = (int)(screenSize.getWidth()*.5);
-            int help_height = (int)(screenSize.getHeight()*.3);
+            int help_height = (int)(screenSize.getHeight()*.35);
 
             helpDialog.setSize(help_width,help_height);
             
@@ -905,7 +961,7 @@ public class PCSMenuBar extends JMenuBar {
         } catch (IOException ex) {
             Logger.getLogger(PCSMenuBar.class.getName()).log(Level.SEVERE, null, ex);
         }
-*/
+
     }
     
 }
