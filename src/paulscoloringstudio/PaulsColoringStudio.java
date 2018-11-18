@@ -2726,7 +2726,12 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
 
                     for (int j = 0; j < vertList.size(); j++)
                     {
-                        g.fillOval(p.xpoints[vertList.get(j)] - dotOffset, p.ypoints[vertList.get(j)] - dotOffset, dotWidth, dotWidth);
+                        int vertexIndex = vertList.get(j);
+                        if (vertexIndex > p.xpoints.length-1 || vertexIndex > p.ypoints.length-1)
+                        {
+                            System.out.println("Problem here");
+                        }
+                        g.fillOval(p.xpoints[vertexIndex] - dotOffset, p.ypoints[vertexIndex] - dotOffset, dotWidth, dotWidth);
                     }
                 }
             }
@@ -7055,7 +7060,7 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 PointXY p2 = new PointXY(p.polygon.xpoints[i], p.polygon.ypoints[i]);
                 if (rect.contains(p2.x,p2.y))
                 {
-                    if (!currentProjectState.selectedObjectIndices.contains(p))
+                    if (!currentProjectState.selectedObjectIndices.contains(this.getPolygonIndex(p)))
                     {
                         currentProjectState.selectedObjectIndices.add(this.getPolygonIndex(p));
                     }
