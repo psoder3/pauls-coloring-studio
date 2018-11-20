@@ -46,6 +46,8 @@ public class RunPaulsColoringStudio {
         final PaulsColoringStudio graphic = new PaulsColoringStudio();
 
         graphic.ShowOutlinesCheckbox.setSelected(true);
+        graphic.RecolorOnSelectCheckbox.setSelected(true);
+
         //graphic.assembleVideoFromFrames();
         graphic.numberMosaicColumnsBox.setText("30");
         graphic.addMouseListener(graphic);
@@ -568,6 +570,8 @@ public class RunPaulsColoringStudio {
         //graphic.buttons2.add(graphic.AsciiFilterButton);
         //graphic.buttons2.add(graphic.AsciiFilterVideoButton);
         graphic.buttons2.add(graphic.ShowOutlinesCheckbox);
+        graphic.buttons2.add(graphic.RecolorOnSelectCheckbox);
+
         /*graphic.colorChooser.addColorChangedListener(new ColorChangedListener() {
             @Override
             public void colorChanged(Color newColor) {

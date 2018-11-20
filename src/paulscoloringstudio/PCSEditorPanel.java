@@ -272,7 +272,10 @@ public class PCSEditorPanel extends JPanel {
             @Override
             public void stateChanged(ChangeEvent e) {
                 hue_slider.setValue((int)(hue_spinner.getValue()));
-                calculateRGB();
+                if (coloringStudio.RecolorOnSelectCheckbox.isSelected() || hue_spinner.hasFocus() || hue_slider.hasFocus())
+                {
+                    calculateRGB();
+                }
                 repaint();
             }
         });
@@ -1117,8 +1120,16 @@ public class PCSEditorPanel extends JPanel {
                 coloringStudio.currentProjectState.selectedPolygon.secondary_color = color;
             }
             MaskedObject polygon = coloringStudio.currentProjectState.selectedPolygon;
-
-            coloringStudio.colorizePolygon(polygon);
+            if (coloringStudio.RecolorOnSelectCheckbox.isSelected() 
+                    || hue_spinner.hasFocus() || hue_slider.hasFocus()
+                    || sat_spinner.hasFocus() || sat_slider.hasFocus()
+                    || val_spinner.hasFocus() || val_slider.hasFocus()
+                    || hue_variation_spinner.hasFocus() || hue_var_slider.hasFocus()
+                    || sat_variation_spinner.hasFocus() || sat_var_slider.hasFocus()
+                    || complement_slider.hasFocus() || complement_spinner.hasFocus())
+            {
+                coloringStudio.colorizePolygon(polygon);
+            }
             coloringStudio.repaint();
         }
     }

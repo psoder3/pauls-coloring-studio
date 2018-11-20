@@ -60,6 +60,7 @@ import java.text.DecimalFormat;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Stack;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -152,6 +153,9 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     JButton Mosaic2Button = new JButton("Mosaic 2");
     JButton ApplyFilterButton = new JButton("Apply Filter");
     JCheckBox ShowOutlinesCheckbox = new JCheckBox("Show Object Outlines");
+    
+    JCheckBox RecolorOnSelectCheckbox = new JCheckBox("Recolor on Select");
+    
     JCheckBox InterpolateGapsCheckbox = new JCheckBox("Interpolate Gaps");
     JButton countColorsButton = new JButton("Count Colors");
     JButton splitTwoColorsButton = new JButton("Split Colors");
@@ -195,6 +199,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     HashMap<String,Integer> patterns = new HashMap();
     int frameCounter = 0;
     
+    
+    Map<Integer, ArrayList<ColorMapping>> colorMap = new HashMap();
     ProjectState currentProjectState = new ProjectState();
     
     //ArrayList<MaskedObject> polygons;
@@ -403,6 +409,202 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
     public void close()
     {
         System.exit(0);
+    }
+    
+    public void transferColorsAllFrames()
+    {
+        while (this.editorPanel.video_frame_slider.getValue() < this.lastFrame)
+        {
+            transferColorsNextFrame();
+        }
+    }
+    
+    public void populateMap()
+    {
+        // for all pixels in current image, create ColorMapping (RGB, X,Y) store 
+        // in list at average of RGB in map. If it doesn’t exist, first create, 
+        // then add to list, then add list to map.
+        for (int row = 0; row < image_pixels.getHeight(); row++)
+        {
+            for (int column = 0; column < image_pixels.getWidth(); column++)
+            {
+                Pixel currentPixel = getPixel(column,row,image_pixels);
+                int red = currentPixel.red;
+                int green = currentPixel.green;
+                int blue = currentPixel.blue;
+                
+                int intensity = (int)((red+green+blue+1.0)/3.0);
+                ColorMapping cmapping = new ColorMapping();
+                cmapping.R = red;
+                cmapping.G = green;
+                cmapping.B = blue;
+                cmapping.x = column;
+                cmapping.y = row;
+                
+                ArrayList<ColorMapping> intensityColors = colorMap.get(intensity);
+                if (intensityColors == null)
+                {
+                    intensityColors = new ArrayList();
+                    intensityColors.add(cmapping);
+                    colorMap.put(intensity, intensityColors);
+                }
+                else
+                {
+                    intensityColors.add(cmapping);
+                }
+            }
+        }
+    }
+    
+    public void transferColorsNextFrame()
+    {
+        this.colorMap.clear();
+        System.out.println("Started Populating Map...");
+        populateMap();
+        System.out.println("Done Populating Map.");
+        
+        try {
+            int frameNumber = editorPanel.video_current_value;
+            
+            String pmocFileName = 
+                    ProjectDirectory + File.separator + "Video Frame PMOCs" + 
+                    File.separator + ProjectName + "-frame-" + (frameNumber+1) + ".pmoc";
+            
+            if (!new File(pmocFileName).exists())
+            {
+            
+                String imageFileName = 
+                        ProjectDirectory + File.separator + "Video Frame PMOCs" + 
+                        File.separator + ProjectName + "-frame-" + (frameNumber+1) + ".png";
+
+
+
+                File nextImageFile = new File(imageFileName);
+
+
+                System.out.println("Reading Next Image into Memory...");
+                BufferedImage nextImg = ImageIO.read(nextImageFile);
+                System.out.println("Done Reading Next Image into Memory.");
+                //colorNextImage
+
+                System.out.println("Transferring Colors to BufferedImage...");
+                transferColors(nextImg);
+                System.out.println("Done Transferring Colors to BufferedImage.");
+                //saveBufferedImageToPNG
+                //String output_filename = "colorTransferTest.png";
+                String output_filename = imageFileName;
+
+                System.out.println("Writing New Image to File...");
+                ImageIO.write(nextImg, "png", new File(output_filename));
+                System.out.println("Done Writing New Image to File.");
+            }
+            int currentFrameIndex = (int)editorPanel.video_frame_spinner.getValue();
+            editorPanel.video_frame_spinner.setValue(currentFrameIndex+1);
+            repaint();
+        } catch (IOException ex) {
+            Logger.getLogger(PaulsColoringStudio.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+    }
+    
+    public void transferColors(BufferedImage img)
+    {
+        int intensityVariationTolerance = 1;
+        // for all pixels in next image, use intensity to look up ColorMappings List in Map. 
+        // Choose the one with smallest distance from current i,j location. Set pixel to 
+        // have RGB of that ColorMapping. 
+        // for now, if can’t find in map, set pixel to be bright cyan (0,255,255)
+        for (int row = 0; row < img.getHeight(); row++)
+        {
+            for (int column = 0; column < img.getWidth(); column++)
+            {
+                Pixel currentPixel = getPixel(column,row,img);
+                int red = currentPixel.red;
+                int green = currentPixel.green;
+                int blue = currentPixel.blue;
+                //Color currentPixelColor = new Color(img.getRGB(column, row));        
+                //int red = currentPixelColor.getRed();
+                //int green = currentPixelColor.getGreen();
+                //int blue = currentPixelColor.getBlue();
+                
+                int intensity = (int)((red+green+blue+1.0)/3.0);
+                ColorMapping bestColorMapping = getBestColorMatchForIntensity(intensity,row,column);
+                double closestDistance;
+                if (bestColorMapping == null)
+                {
+                    closestDistance = 100000000;
+                }
+                else
+                {
+                    closestDistance = getDistance(row,column,bestColorMapping.y,bestColorMapping.x);
+                }
+                for (int i = -intensityVariationTolerance; i <= intensityVariationTolerance; i++)
+                {
+                    if (i != 0 && intensity+i >= 0 && intensity+i < 256)
+                    {
+                        ColorMapping cmapping = getBestColorMatchForIntensity(intensity+i,row,column);
+                        double aDistance;
+                        if (cmapping == null)
+                        {
+                            aDistance = 100000000;
+                        }
+                        else
+                        {
+                            aDistance = getDistance(row,column,cmapping.y,cmapping.x);
+                        }
+                        if (aDistance < closestDistance)
+                        {
+                            closestDistance = aDistance;
+                            bestColorMapping = cmapping;
+                        }
+                    }
+                }
+                
+                if (bestColorMapping == null)
+                {
+                    currentPixel.setRGB(red, green, blue, img);
+                    //Color c = new Color(0,255,255);
+                    //img.setRGB(column, row, c.getRGB());
+                }
+                else
+                {
+                    Color squishedColor = fluffToOriginalIntensity(
+                            new Color(bestColorMapping.R,bestColorMapping.G,bestColorMapping.B)
+                            ,intensity);
+                    currentPixel.setRGB(squishedColor.getRed(),squishedColor.getGreen(),squishedColor.getBlue(),img);
+                    //Color c = new Color(cmapping.R,cmapping.G,cmapping.B);
+                    //img.setRGB(column, row, c.getRGB());
+                }
+            }
+        }
+    }
+    
+    
+    public double getDistance(double y1, double x1, double y2, double x2)
+    {
+        return Math.pow(x1-x2,2.0) + Math.pow(y1-y2,2.0);
+    }
+    
+    
+    public ColorMapping getBestColorMatchForIntensity(int intensity, int row, int column)
+    {
+        ArrayList<ColorMapping> cMaps = colorMap.get(intensity);
+        if (cMaps == null)
+        {
+            return null;
+        }
+        ColorMapping closestMap = cMaps.get(0);
+        double closestDistance = getDistance(row,column,closestMap.y,closestMap.x);
+        for (ColorMapping cMap : cMaps)
+        {
+            double aDistance = getDistance(row,column,cMap.y,cMap.x);
+            if (aDistance < closestDistance)
+            {
+                closestDistance = aDistance;
+                closestMap = cMap;
+            }
+        }
+        return closestMap;
     }
     
     public Pixel findMedian(ArrayList<Pixel> kernal, String color)
@@ -857,6 +1059,217 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                                     (c1.getRed()+c2.getBlue())/2
         );
     }
+    
+    
+    
+    
+    private Color fluffToOriginalIntensity(Color newColor, int originalIntensity)
+    {
+        double newAverage = (newColor.getRed() + newColor.getGreen() + newColor.getBlue()) / 3.0;
+        //System.out.println("old average: " + average);
+        //System.out.println("new average: " + newAverage);
+        //System.out.print(255-average_value + ",");
+        int difference = originalIntensity - (int)newAverage;
+
+        int newRed = newColor.getRed()+difference;
+        int newGreen = newColor.getGreen()+difference;
+        int newBlue = newColor.getBlue()+difference;
+
+        
+        // THIS NEXT PART ENSURES THE ORIGINAL 
+        // GRAYSCALE AVERAGE VALUE IS PRESERVED
+        
+        
+        // Red is above
+        if (newRed > 255)
+        {
+            int surplusRed = newRed - 255;
+            newRed = 255;
+
+            newGreen += surplusRed/2;
+            newBlue += surplusRed/2;
+            if (newGreen > 255)
+            {
+                int surplusGreen = newGreen - 255;
+                newGreen = 255;
+                newBlue += surplusGreen;
+            }
+            else if (newBlue > 255)
+            {
+                int surplusBlue = newBlue - 255;
+                newBlue = 255;
+                newGreen += surplusBlue;
+            }
+
+        } 
+        // Red is below
+        else if (newRed < 0)
+        {
+            int debtRed = 0-newRed;
+            newRed = 0;
+
+            newGreen -= debtRed/2;
+            newBlue -= debtRed/2;
+            if (newGreen < 0)
+            {
+                int debtGreen = 0 - newGreen;
+                newGreen = 0;
+                newBlue -= debtGreen;
+            }
+            else if (newBlue < 0)
+            {
+                int debtBlue = 0 - newBlue;
+                newBlue = 0;
+                newGreen -= debtBlue;
+            }
+
+        }
+
+        // Green is above
+        else if (newGreen > 255)
+        {
+            int surplusGreen = newGreen - 255;
+            newGreen = 255;
+
+            newRed += surplusGreen/2;
+            newBlue += surplusGreen/2;
+            if (newRed > 255)
+            {
+                int surplusRed = newRed - 255;
+                newRed = 255;
+                newBlue += surplusRed;
+            }
+            else if (newBlue > 255)
+            {
+                int surplusBlue = newBlue - 255;
+                newBlue = 255;
+                newRed += surplusBlue;
+            }
+
+        }
+        // Green is below
+        else if (newGreen < 0)
+        {
+            int debtGreen = 0-newGreen;
+            newGreen = 0;
+
+            newRed -= debtGreen/2;
+            newBlue -= debtGreen/2;
+            if (newRed < 0)
+            {
+                int debtRed = 0 - newRed;
+                newRed = 0;
+                newBlue -= debtRed;
+            }
+            else if (newBlue < 0)
+            {
+                int debtBlue = 0 - newBlue;
+                newBlue = 0;
+                newRed -= debtBlue;
+            }
+
+        }
+
+
+        // Blue is above
+        else if (newBlue > 255)
+        {
+            int surplusBlue = newBlue - 255;
+            newBlue = 255;
+
+            newGreen += surplusBlue/2;
+            newRed += surplusBlue/2;
+            if (newGreen > 255)
+            {
+                int surplusGreen = newGreen - 255;
+                newGreen = 255;
+                newRed += surplusGreen;
+            }
+            else if (newRed > 255)
+            {
+                int surplusRed = newRed - 255;
+                newRed = 255;
+                newGreen += surplusRed;
+            }
+
+        }
+        // Blue is below
+        else if (newBlue < 0)
+        {
+            int debtBlue = 0-newBlue;
+            newBlue = 0;
+
+            newGreen -= debtBlue/2;
+            newRed -= debtBlue/2;
+            if (newGreen < 0)
+            {
+                int debtGreen = 0 - newGreen;
+                newGreen = 0;
+                newRed -= debtGreen;
+            }
+            else if (newRed < 0)
+            {
+                int debtRed = 0 - newRed;
+                newRed = 0;
+                newGreen -= debtRed;
+            }
+
+        }
+
+        if (newRed > 258 || newRed < -3 || newGreen > 258 || newGreen < -3 || newBlue > 258 || newBlue < -3)
+        {
+            System.out.println("Something very not okay");
+        }
+        else if (newRed > 255)
+        {
+            newRed = 255;
+        }
+        else if (newRed < 0)
+        {
+            newRed = 0;
+        }
+        else if (newGreen > 255)
+        {
+            newGreen = 255;
+        }
+        else if (newGreen < 0)
+        {
+            newGreen = 0;
+        }
+        else if (newBlue > 255)
+        {
+            newBlue = 255;
+        }
+        else if (newBlue < 0)
+        {
+            newBlue = 0;
+        }
+        newAverage = (newRed + newGreen + newBlue)/3;
+        if ((int)newAverage > originalIntensity)
+        {
+            System.out.println("new greater than old");
+            if (newRed > 0) newRed--;
+            if (newGreen > 0) newGreen--;
+            if (newBlue > 0) newBlue--;
+
+        }
+        else if ((int)newAverage < originalIntensity)
+        {
+            System.out.println("new less than old" + (newAverage - originalIntensity));
+            if (newRed < 255) newRed++;
+            if (newGreen < 255) newGreen++;
+            if (newBlue < 255) newBlue++;
+
+        }
+
+        return new Color(newRed,newGreen,newBlue);
+
+    }
+    
+    
+    
+    
+    
     
     private void colorPixel(int column, int row, MaskedObject containingObj)
     {
@@ -4098,6 +4511,43 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                     
                     System.out.println(System.currentTimeMillis());
 
+                    
+                    if (ffmpegExecutable.equals("ffmpeg"))
+                    {
+                        System.out.println("Changing ffmpeg Permissions...");
+                        String[] command1 = { 
+                            "chmod",
+                            "777",
+                            System.getProperty("user.dir") + File.separator + ffmpegExecutable
+                        };
+
+
+
+                        Process proc = Runtime.getRuntime().exec(command1);
+
+
+                        BufferedReader stdInput = new BufferedReader(new 
+                             InputStreamReader(proc.getInputStream()));
+
+                        BufferedReader stdError = new BufferedReader(new 
+                             InputStreamReader(proc.getErrorStream()));
+                        // read the output from the command
+                        System.out.println("Here is the standard output of the command:\n");
+                        String s;
+                        while ((s = stdInput.readLine()) != null) {
+                            System.out.println(s);
+
+                        }
+
+                        // read any errors from the attempted command
+                        System.out.println("Here is the standard error of the command (if any):\n");
+                        while ((s = stdError.readLine()) != null) {
+                            System.out.println(s);
+
+                        }
+
+                        System.out.println("Finished changing permissions");
+                    }
                     
                     
                     System.out.println("Assembling Frames into Video...");

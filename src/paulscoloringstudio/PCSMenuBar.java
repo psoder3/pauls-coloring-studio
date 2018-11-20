@@ -58,6 +58,8 @@ public class PCSMenuBar extends JMenuBar {
     JMenuItem applyToAllFramesItem;
     JMenuItem findEdgesItem;
     JMenuItem trackMotionItem;
+    JMenuItem transferColorsNextFrameItem;
+    JMenuItem transferColorsAllFramesItem;
     JMenuItem autoBorderItem;
     JMenuItem reverseBorderDirectionItem;
     
@@ -216,10 +218,14 @@ public class PCSMenuBar extends JMenuBar {
         if (this.coloringStudio.PROJECT_TYPE == PaulsColoringStudio.PROJECT_TYPE_IMAGE)
         {
             exportVideoItem.setEnabled(false);
+            transferColorsAllFramesItem.setEnabled(false);
+            transferColorsNextFrameItem.setEnabled(false);
         }
         else
         {
             exportVideoItem.setEnabled(enabled);
+            transferColorsAllFramesItem.setEnabled(enabled);
+            transferColorsNextFrameItem.setEnabled(enabled);
         }
         
     }
@@ -689,6 +695,30 @@ public class PCSMenuBar extends JMenuBar {
             }
         });
         editMenu.add(trackMotionItem);
+        
+        
+        transferColorsNextFrameItem = new JMenuItem("Transfer Colors to Next Frame");
+        transferColorsNextFrameItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                coloringStudio.setEnabledSaveButtons(false);
+                coloringStudio.transferColorsNextFrame();
+                
+            }
+        });
+        editMenu.add(transferColorsNextFrameItem);
+        
+        
+        transferColorsAllFramesItem = new JMenuItem("Transfer Colors to All Frames");
+        transferColorsAllFramesItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                coloringStudio.setEnabledSaveButtons(false);
+                coloringStudio.transferColorsAllFrames();
+            }
+        });
+        editMenu.add(transferColorsAllFramesItem);
+        
         
         autoBorderItem = new JMenuItem("Turn Auto-Complete Border On");
         autoBorderItem.setAccelerator(KeyStroke.getKeyStroke(
