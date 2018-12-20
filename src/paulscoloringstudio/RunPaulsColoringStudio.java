@@ -329,7 +329,7 @@ public class RunPaulsColoringStudio {
         });
         
         graphic.colorLayersButton.addActionListener((ActionEvent e) -> {
-            graphic.colorizeImageByLayers();
+            graphic.colorizeImageByLayers(graphic.image_pixels);
             if (!graphic.saveButton.isEnabled())
             {
                 graphic.setEnabledSaveButtons(true);

@@ -76,13 +76,15 @@ public class PCSEditorPanel extends JPanel {
     int val_max = 100;
     int val_initial = 100;
     
-    JLabel hue_variation_label;
+    //JLabel hue_variation_label;
+    JButton hue_variation_label;
     JSlider hue_var_slider;
     int hue_var_min = 0;
     int hue_var_max = 360;
     int hue_var_initial = 0;
     
-    JLabel sat_variation_label;
+    //JLabel sat_variation_label;
+    JButton sat_variation_label;
     JSlider sat_var_slider;
     int sat_var_min = 0;
     int sat_var_max = 100;
@@ -94,6 +96,12 @@ public class PCSEditorPanel extends JPanel {
     int comp_max = 256;
     int comp_initial = 0;
     
+    JLabel var_origin_label;
+    JSlider var_origin_slider;
+    int var_origin_min = 0;
+    int var_origin_max = 255;
+    int var_origin_initial = 128;
+    
     JSpinner hue_spinner;
     JSpinner sat_spinner;
     JSpinner val_spinner;
@@ -102,7 +110,7 @@ public class PCSEditorPanel extends JPanel {
     JSpinner sat_variation_spinner;
     
     JSpinner complement_spinner;
-    
+    JSpinner var_origin_spinner;
     JSpinner video_frame_spinner;
     
     JSlider video_frame_slider;
@@ -412,7 +420,7 @@ public class PCSEditorPanel extends JPanel {
         // Hue Variation
         // -----------------------
         JPanel hue_variation_panel = new JPanel();
-        hue_variation_label = new JLabel("hue variation");
+        hue_variation_label = new JButton("hue variation <");
         hue_var_slider = new JSlider(JSlider.HORIZONTAL,hue_var_min,hue_var_max,hue_var_initial);
 
         SpinnerModel hue_variation_model =
@@ -479,6 +487,35 @@ public class PCSEditorPanel extends JPanel {
             }
         });
         
+        hue_variation_label.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                coloringStudio.pushCurrentToUndoStack("toggle hue variation direction");
+
+                if (hue_variation_label.getText().equals("hue variation <"))
+                {
+                    hue_variation_label.setText("hue variation >");
+                }
+                else
+                {
+                    hue_variation_label.setText("hue variation <");
+                }
+                if (whichColorList.getSelectedItem().equals("Primary Color"))
+                {
+                    coloringStudio.currentProjectState.selectedPolygon.hue_var_direction_increase = 
+                            !coloringStudio.currentProjectState.selectedPolygon.hue_var_direction_increase;
+                }
+                else if (whichColorList.getSelectedItem().equals("Secondary Color"))
+                {
+                    coloringStudio.currentProjectState.selectedPolygon.sec_hue_var_direction_increase = 
+                            !coloringStudio.currentProjectState.selectedPolygon.sec_hue_var_direction_increase;
+                }
+                repaint();
+                calculateRGB();
+            }
+        }
+        );
+        
         hue_variation_panel.add(hue_variation_label);
         hue_variation_panel.add(hue_var_slider);
         hue_variation_panel.add(hue_variation_spinner);
@@ -487,7 +524,7 @@ public class PCSEditorPanel extends JPanel {
         // Saturation Variation
         // -----------------------
         JPanel sat_variation_panel = new JPanel();
-        sat_variation_label = new JLabel("sat variation");
+        sat_variation_label = new JButton("sat variation <");
         sat_var_slider = new JSlider(JSlider.HORIZONTAL,sat_var_min,sat_var_max,sat_var_initial);
         SpinnerModel sat_variation_model =
         new SpinnerNumberModel(sat_var_initial, //initial value
@@ -556,9 +593,127 @@ public class PCSEditorPanel extends JPanel {
         });
         
         
+        sat_variation_label.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                coloringStudio.pushCurrentToUndoStack("toggle saturation variation direction");
+                if (sat_variation_label.getText().equals("sat variation <"))
+                {
+                    sat_variation_label.setText("sat variation >");
+                }
+                else
+                {
+                    sat_variation_label.setText("sat variation <");
+                }
+                if (whichColorList.getSelectedItem().equals("Primary Color"))
+                {
+                    coloringStudio.currentProjectState.selectedPolygon.sat_var_direction_increase = 
+                            !coloringStudio.currentProjectState.selectedPolygon.sat_var_direction_increase;
+                }
+                else if (whichColorList.getSelectedItem().equals("Secondary Color"))
+                {
+                    coloringStudio.currentProjectState.selectedPolygon.sec_sat_var_direction_increase = 
+                            !coloringStudio.currentProjectState.selectedPolygon.sec_sat_var_direction_increase;
+                }
+
+                repaint();
+                calculateRGB();
+            }
+        }
+        );
+        
         sat_variation_panel.add(sat_variation_label);
         sat_variation_panel.add(sat_var_slider);
         sat_variation_panel.add(sat_variation_spinner);
+        
+        
+        
+        
+        
+        // -----------------------
+        // Variation Origin 
+        // -----------------------
+        JPanel var_origin_panel = new JPanel();
+        var_origin_label = new JLabel("sat vari. origin");
+        var_origin_slider = new JSlider(JSlider.HORIZONTAL,var_origin_min,var_origin_max,var_origin_initial);
+        SpinnerModel var_origin_model =
+        new SpinnerNumberModel(var_origin_initial, //initial value
+                               var_origin_min, //min
+                               var_origin_max, //max
+                               1);                //step
+        var_origin_spinner = new JSpinner(var_origin_model);
+        var_origin_slider.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                var_origin_spinner.setValue((int)(var_origin_slider.getValue()));
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
+                repaint();
+            }
+        });
+        var_origin_spinner.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                var_origin_slider.setValue((int)(var_origin_spinner.getValue()));
+                if (pColoringStudio.currentProjectState.selectedPolygon != null)
+                {
+                    if (whichColorList.getSelectedItem().equals("Primary Color"))
+                    {
+                        coloringStudio.currentProjectState.selectedPolygon.var_origin = 
+                        (int)var_origin_spinner.getValue();
+                    }
+                    else if (whichColorList.getSelectedItem().equals("Secondary Color"))
+                    {
+                        coloringStudio.currentProjectState.selectedPolygon.secondary_var_origin = 
+                        (int)var_origin_spinner.getValue();
+                    }
+                }
+                calculateRGB();
+                repaint();
+            }
+        });
+        
+        
+        var_origin_spinner.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change variation origin");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        var_origin_slider.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change variation origin");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        
+        var_origin_panel.add(var_origin_label);
+        var_origin_panel.add(var_origin_slider);
+        var_origin_panel.add(var_origin_spinner);
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         // -----------------------
         // SECONDARY COLOR THRESHOLD (FOR MULTIPLE COLORS IN SAME OBJECT)
@@ -628,6 +783,12 @@ public class PCSEditorPanel extends JPanel {
         complement_panel.add(complement_label);
         complement_panel.add(complement_slider);
         complement_panel.add(complement_spinner);
+        
+        
+        
+        
+        
+        
         
         
         // -----------------------
@@ -964,7 +1125,7 @@ public class PCSEditorPanel extends JPanel {
         
         */
         rectangle = new Rectangle();
-        colorPanel.setLayout(new GridLayout(9,1));
+        colorPanel.setLayout(new GridLayout(10,1));
         colorPanel.add(whichColorList);
         colorPanel.add(hue_panel);
         colorPanel.add(sat_panel);
@@ -973,7 +1134,7 @@ public class PCSEditorPanel extends JPanel {
         
         colorPanel.add(hue_variation_panel);
         colorPanel.add(sat_variation_panel);
-        
+        colorPanel.add(var_origin_panel);
         colorPanel.add(complement_panel);
         //this.add(edgeBlendList);
         colorPanel.add(depthPanel);
@@ -1019,6 +1180,9 @@ public class PCSEditorPanel extends JPanel {
         this.complement_label.setEnabled(enabled);
         this.complement_slider.setEnabled(enabled);
         this.complement_spinner.setEnabled(enabled);
+        this.var_origin_label.setEnabled(enabled);
+        this.var_origin_slider.setEnabled(enabled);
+        this.var_origin_spinner.setEnabled(enabled);
         this.depthLbl.setEnabled(enabled);
         this.depthField.setEnabled(enabled);
         this.idLbl.setEnabled(enabled);
@@ -1126,7 +1290,8 @@ public class PCSEditorPanel extends JPanel {
                     || val_spinner.hasFocus() || val_slider.hasFocus()
                     || hue_variation_spinner.hasFocus() || hue_var_slider.hasFocus()
                     || sat_variation_spinner.hasFocus() || sat_var_slider.hasFocus()
-                    || complement_slider.hasFocus() || complement_spinner.hasFocus())
+                    || complement_slider.hasFocus() || complement_spinner.hasFocus()
+                    || var_origin_slider.hasFocus() || var_origin_spinner.hasFocus())
             {
                 coloringStudio.colorizePolygon(polygon);
             }
@@ -1174,9 +1339,9 @@ public class PCSEditorPanel extends JPanel {
           Graphics2D g2d = (Graphics2D) g;
 
           g2d.setColor(new Color(red, green, blue));
-          g2d.fillRect(10, 5, 330, 25);
+          g2d.fillRect(10, 5, this.getWidth()-20, 25);
           g2d.setColor(new Color(0, 0, 0));
-          g2d.drawRect(10, 5, 330, 25);
+          g2d.drawRect(10, 5, this.getWidth()-20, 25);
 
         }
 

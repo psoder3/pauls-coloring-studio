@@ -60,6 +60,7 @@ public class PCSMenuBar extends JMenuBar {
     JMenuItem trackMotionItem;
     JMenuItem transferColorsNextFrameItem;
     JMenuItem transferColorsAllFramesItem;
+    JMenuItem applyMasksAllFramesItem;
     JMenuItem autoBorderItem;
     JMenuItem reverseBorderDirectionItem;
     
@@ -220,12 +221,14 @@ public class PCSMenuBar extends JMenuBar {
             exportVideoItem.setEnabled(false);
             transferColorsAllFramesItem.setEnabled(false);
             transferColorsNextFrameItem.setEnabled(false);
+            applyMasksAllFramesItem.setEnabled(false);
         }
         else
         {
             exportVideoItem.setEnabled(enabled);
             transferColorsAllFramesItem.setEnabled(enabled);
             transferColorsNextFrameItem.setEnabled(enabled);
+            applyMasksAllFramesItem.setEnabled(enabled);
         }
         
     }
@@ -718,6 +721,17 @@ public class PCSMenuBar extends JMenuBar {
             }
         });
         editMenu.add(transferColorsAllFramesItem);
+        
+        
+        applyMasksAllFramesItem = new JMenuItem("Color All Frames (for Still Shots)");
+        applyMasksAllFramesItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                coloringStudio.setEnabledSaveButtons(false);
+                coloringStudio.colorAllFramesForStillShots();
+            }
+        });
+        editMenu.add(applyMasksAllFramesItem);
         
         
         autoBorderItem = new JMenuItem("Turn Auto-Complete Border On");
