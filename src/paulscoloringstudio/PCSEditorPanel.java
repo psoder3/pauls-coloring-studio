@@ -90,7 +90,7 @@ public class PCSEditorPanel extends JPanel {
     int sat_var_max = 100;
     int sat_var_initial = 0;
     
-    JLabel complement_label;
+    JButton complement_label;
     JSlider complement_slider;
     int comp_min = 0;
     int comp_max = 256;
@@ -102,6 +102,15 @@ public class PCSEditorPanel extends JPanel {
     int var_origin_max = 255;
     int var_origin_initial = 128;
     
+    JLabel gradient_origin_label;
+    JSlider gradient_origin_slider;
+    int gradient_origin_min = 0;
+    int gradient_origin_max = 256;
+    int gradient_origin_initial = 128; 
+    
+    JPanel gradient_origin_panel = new JPanel();
+
+    
     JSpinner hue_spinner;
     JSpinner sat_spinner;
     JSpinner val_spinner;
@@ -112,6 +121,7 @@ public class PCSEditorPanel extends JPanel {
     JSpinner complement_spinner;
     JSpinner var_origin_spinner;
     JSpinner video_frame_spinner;
+    JSpinner gradient_origin_spinner;
     
     JSlider video_frame_slider;
     int video_frame_min = 0;
@@ -720,7 +730,7 @@ public class PCSEditorPanel extends JPanel {
         // Complementary Shadows
         // -----------------------
         JPanel complement_panel = new JPanel();
-        complement_label = new JLabel("secondary");
+        complement_label = new JButton("secondary");
         complement_slider = new JSlider(JSlider.HORIZONTAL,comp_min,comp_max,comp_initial);
         SpinnerModel complement_model =
         new SpinnerNumberModel(comp_initial, //initial value
@@ -746,8 +756,16 @@ public class PCSEditorPanel extends JPanel {
                 complement_slider.setValue((int)(complement_spinner.getValue()));
                 if (pColoringStudio.currentProjectState.selectedPolygon != null)
                 {
-                    pColoringStudio.currentProjectState.selectedPolygon.complement_threshold = 
+                    if (complement_label.getText().equals("secondary"))
+                    {
+                        pColoringStudio.currentProjectState.selectedPolygon.complement_threshold = 
+                        (int)complement_spinner.getValue();                    }
+                    else
+                    {
+                        pColoringStudio.currentProjectState.selectedPolygon.gradient_range = 
                         (int)complement_spinner.getValue();
+                    }
+                    
                 }
                 calculateRGB();
                 repaint();
@@ -758,7 +776,14 @@ public class PCSEditorPanel extends JPanel {
         complement_spinner.addFocusListener(new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
-                coloringStudio.pushCurrentToUndoStack("change secondary threshold");
+                if (complement_label.getText().equals("secondary"))
+                {
+                    coloringStudio.pushCurrentToUndoStack("change secondary threshold");
+                }
+                else
+                {
+                    coloringStudio.pushCurrentToUndoStack("change gradient range");
+                }
             }
 
             @Override
@@ -770,7 +795,14 @@ public class PCSEditorPanel extends JPanel {
         complement_slider.addFocusListener(new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
-                coloringStudio.pushCurrentToUndoStack("change secondary threshold");
+                if (complement_label.getText().equals("secondary"))
+                {
+                    coloringStudio.pushCurrentToUndoStack("change secondary threshold");
+                }
+                else
+                {
+                    coloringStudio.pushCurrentToUndoStack("change gradient range");
+                }
             }
 
             @Override
@@ -780,11 +812,110 @@ public class PCSEditorPanel extends JPanel {
         });
         
         
+        complement_label.addActionListener(new ActionListener()
+            {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (complement_label.getText().equals("secondary"))
+                    {
+                        coloringStudio.pushCurrentToUndoStack("change to gradient mode");
+                        complement_label.setText("gradient");
+                        coloringStudio.currentProjectState.selectedPolygon.is_gradient_mode = true;
+                        complement_slider.setValue(coloringStudio.currentProjectState.selectedPolygon.gradient_range);
+                        gradient_origin_spinner.setEnabled(true);
+                        gradient_origin_slider.setEnabled(true);
+                        gradient_origin_label.setEnabled(true);
+                    }
+                    else
+                    {
+                        coloringStudio.pushCurrentToUndoStack("change to split color mode");
+                        complement_label.setText("secondary");
+                        coloringStudio.currentProjectState.selectedPolygon.is_gradient_mode = false;
+                        complement_slider.setValue(coloringStudio.currentProjectState.selectedPolygon.complement_threshold);
+                        gradient_origin_spinner.setEnabled(false);
+                        gradient_origin_slider.setEnabled(false);
+                        gradient_origin_label.setEnabled(false);                    
+                    }
+                    calculateRGB();
+                    repaint();
+                }
+            }
+        );
+        
+        
         complement_panel.add(complement_label);
         complement_panel.add(complement_slider);
         complement_panel.add(complement_spinner);
         
         
+        
+        
+        // -----------------------
+        // Gradient Origin 
+        // -----------------------
+        gradient_origin_label = new JLabel("gradient origin");
+        gradient_origin_slider = new JSlider(JSlider.HORIZONTAL,gradient_origin_min,gradient_origin_max,gradient_origin_initial);
+        SpinnerModel gradient_origin_model =
+        new SpinnerNumberModel(gradient_origin_initial, //initial value
+                               gradient_origin_min, //min
+                               gradient_origin_max, //max
+                               1);                //step
+        gradient_origin_spinner = new JSpinner(gradient_origin_model);
+        gradient_origin_slider.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                gradient_origin_spinner.setValue((int)(gradient_origin_slider.getValue()));
+                if (!coloringStudio.saveButton.isEnabled())
+                {
+                    coloringStudio.setEnabledSaveButtons(true);
+                    repaint();
+                }
+                repaint();
+            }
+        });
+        gradient_origin_spinner.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                gradient_origin_slider.setValue((int)(gradient_origin_spinner.getValue()));
+                if (pColoringStudio.currentProjectState.selectedPolygon != null)
+                {
+                    coloringStudio.currentProjectState.selectedPolygon.gradient_origin = 
+                    (int)gradient_origin_spinner.getValue();
+                }
+                calculateRGB();
+                repaint();
+            }
+        });
+        
+        
+        gradient_origin_spinner.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change gradient origin");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        gradient_origin_slider.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                coloringStudio.pushCurrentToUndoStack("change gradient origin");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+              
+            }
+        });
+        
+        
+        gradient_origin_panel.add(gradient_origin_label);
+        gradient_origin_panel.add(gradient_origin_slider);
+        gradient_origin_panel.add(gradient_origin_spinner);
         
         
         
@@ -1125,7 +1256,7 @@ public class PCSEditorPanel extends JPanel {
         
         */
         rectangle = new Rectangle();
-        colorPanel.setLayout(new GridLayout(10,1));
+        colorPanel.setLayout(new GridLayout(12,1));
         colorPanel.add(whichColorList);
         colorPanel.add(hue_panel);
         colorPanel.add(sat_panel);
@@ -1135,7 +1266,11 @@ public class PCSEditorPanel extends JPanel {
         colorPanel.add(hue_variation_panel);
         colorPanel.add(sat_variation_panel);
         colorPanel.add(var_origin_panel);
+        
+        colorPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
+
         colorPanel.add(complement_panel);
+        colorPanel.add(gradient_origin_panel);
         //this.add(edgeBlendList);
         colorPanel.add(depthPanel);
         
@@ -1188,6 +1323,20 @@ public class PCSEditorPanel extends JPanel {
         this.idLbl.setEnabled(enabled);
         this.idField.setEnabled(enabled);
         this.rectangle.setEnabled(enabled);
+        if (enabled && 
+                this.coloringStudio.currentProjectState.selectedPolygon != null
+                && this.coloringStudio.currentProjectState.selectedPolygon.is_gradient_mode)
+        {
+            this.gradient_origin_spinner.setEnabled(true);
+            this.gradient_origin_label.setEnabled(true);
+            this.gradient_origin_slider.setEnabled(true);
+        }
+        else
+        {
+            this.gradient_origin_spinner.setEnabled(false);
+            this.gradient_origin_label.setEnabled(false);
+            this.gradient_origin_slider.setEnabled(false);
+        }
     }
     
     void setVideoNavigationEnabled(boolean enabled)

@@ -1114,6 +1114,37 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 (c1.getRed() + c2.getBlue()) / 2
         );
     }
+    
+    private Color blendColorsAtIntensity(Color c1, Color c2, int intensity, int gradientRange, int gradient_origin) {
+        
+        if (intensity > 100 && intensity < 156) 
+        {
+            //System.out.println("This one's worth debugging");
+        }
+        
+        double signedGradient = (1.0*gradient_origin) - gradientRange;
+        double percentColor2;
+        if (signedGradient == 0)
+        {
+            percentColor2 = .5;
+        }
+        else
+        {
+            percentColor2 = (gradient_origin-intensity)/(signedGradient);
+        }
+        
+        //if (percentColor2 < 0) percentColor2 += 1;
+        
+        if (percentColor2 > 1) percentColor2 = 1;
+        if (percentColor2 < 0) percentColor2 = 0;
+        double percentColor1 = 1 - percentColor2;
+        
+        int mixedRed = (int)((c1.getRed()*percentColor1) + (c2.getRed()*percentColor2));
+        int mixedGreen = (int)((c1.getGreen()*percentColor1) + (c2.getGreen()*percentColor2));
+        int mixedBlue = (int)((c1.getBlue()*percentColor1) + (c2.getBlue()*percentColor2));
+        Color newColor = new Color(mixedRed,mixedGreen,mixedBlue);
+        return newColor;
+    }
 
     private Color fluffToOriginalIntensity(Color newColor, int originalIntensity) {
         double newAverage = (newColor.getRed() + newColor.getGreen() + newColor.getBlue()) / 3.0;
@@ -1286,6 +1317,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         if (containingObj == null) {
             containingObj = emptyObject;
         }
+        int squishValue = containingObj.gradient_range;
+        int gradient_origin = containingObj.gradient_origin;
         int hue_variation = containingObj.hue_variation;
         int saturation_variation = containingObj.saturation_variation;
         boolean hue_var_direction = containingObj.hue_var_direction_increase;
@@ -1302,7 +1335,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         pixelB = average;
         if (containingObj == emptyObject) {
             color_picked = new Color(0, 0, 0);
-        } else if (average > 256 - containingObj.complement_threshold) {
+        } else if (average > 256 - containingObj.complement_threshold && !containingObj.is_gradient_mode) {
+            
             color_picked = containingObj.secondary_color;
             hue_variation = containingObj.secondary_hue_variation;
             saturation_variation = containingObj.secondary_sat_variation;
@@ -1312,7 +1346,12 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         } else {
             color_picked = containingObj.color;
         }
-
+        
+        if (color_picked == null)
+        {
+            color_picked = new Color(0, 0, 0);
+        }
+        
         if (editorPanel.edgeBlendList.getSelectedIndex() == 1) {
 
             /* TESTING ONLY, FOR NOW IT WILL TURN LOW CONTRAST EDGES YELLOW */
@@ -1363,6 +1402,64 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             b = 0;
         }
         Color newColor = Color.getHSBColor(inputHue, inputSaturation, b);
+        
+        if (containingObj.is_gradient_mode)
+        {
+            int sec_hue_variation = containingObj.secondary_hue_variation;
+            int sec_saturation_variation = containingObj.secondary_sat_variation;
+            boolean sec_hue_var_direction = containingObj.sec_hue_var_direction_increase;
+            boolean sec_sat_var_direction = containingObj.sec_sat_var_direction_increase;
+            int sec_variation_origin = containingObj.secondary_var_origin;
+
+            pixelR = average;
+            pixelG = average;
+            pixelB = average;
+            if (containingObj == emptyObject) {
+                color_picked = new Color(0, 0, 0);
+            } else {
+                color_picked = containingObj.secondary_color;
+            }
+
+            
+            float[] sec_hsbInput = new float[3];
+            Color.RGBtoHSB(color_picked.getRed(), color_picked.getGreen(), color_picked.getBlue(), sec_hsbInput);
+            float sec_inputHue = sec_hsbInput[0];
+            float sec_inputSaturation = sec_hsbInput[1];
+
+            float[] sec_hsb = new float[3];
+            Color.RGBtoHSB(pixelR, pixelG, pixelB, hsb);
+            float sec_h = hsb[0];
+            float sec_s = hsb[1];
+            float sec_b = hsb[2];
+
+            sec_inputHue = sec_hsbInput[0] + getHueVariationFromIntensity(average, sec_hue_variation, sec_hue_var_direction, sec_variation_origin);
+            sec_inputSaturation = sec_hsbInput[1] + getSatVariationFromIntensity(average, sec_saturation_variation, sec_sat_var_direction, sec_variation_origin);
+            if (sec_inputSaturation < 0) {
+                sec_inputSaturation = 0;
+            }
+            if (sec_inputSaturation > 1) {
+                sec_inputSaturation = 1;
+            }
+            if (sec_inputHue < 0) {
+                sec_inputHue += 1; // Unlike saturation, hue can wrap from 
+            }
+            if (sec_inputHue > 1) {
+                sec_inputHue -= 1; // pink/red to red/orange and vice versa
+            }
+            //System.out.print(hsv[0] + " ");
+            sec_b *= 1.245;
+            if (sec_b > 1) {
+                sec_b = 1;
+            }
+            if (sec_b < 0) {
+                sec_b = 0;
+            }
+            Color sec_newColor = Color.getHSBColor(sec_inputHue, sec_inputSaturation, sec_b);
+            
+            newColor = blendColorsAtIntensity(newColor,sec_newColor,average, squishValue, gradient_origin);
+        }
+        
+        
         //Color newColor = new Color(rgb);
         double newAverage = (newColor.getRed() + newColor.getGreen() + newColor.getBlue()) / 3.0;
         //System.out.println("old average: " + average);
@@ -3582,8 +3679,20 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         }
         editorPanel.depthField.setText(clickedObject.depth + "");
 
-        editorPanel.complement_spinner.setValue(clickedObject.complement_threshold);
-        editorPanel.complement_slider.setValue(clickedObject.complement_threshold);
+        if (clickedObject.is_gradient_mode)
+        {
+            editorPanel.complement_label.setText("gradient");
+            editorPanel.complement_spinner.setValue(clickedObject.gradient_range);
+            editorPanel.complement_slider.setValue(clickedObject.gradient_range);
+        }
+        else
+        {
+            editorPanel.complement_label.setText("secondary");            
+            editorPanel.complement_spinner.setValue(clickedObject.complement_threshold);
+            editorPanel.complement_slider.setValue(clickedObject.complement_threshold);
+        }
+        editorPanel.gradient_origin_slider.setValue(clickedObject.gradient_origin);
+        editorPanel.gradient_origin_spinner.setValue(clickedObject.gradient_origin);
         editorPanel.edgeBlendList.setSelectedIndex(clickedObject.edgeBlendIndex);
         editorPanel.idField.setText(clickedObject.id + "");
 
@@ -3655,6 +3764,9 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
         copy.sec_sat_var_direction_increase = p.sec_sat_var_direction_increase;
         copy.var_origin = p.var_origin;
         copy.secondary_var_origin = p.secondary_var_origin;
+        copy.is_gradient_mode = p.is_gradient_mode;
+        copy.gradient_range = p.gradient_range;
+        copy.gradient_origin = p.gradient_origin;
         
         copy.edgeBlendIndex = p.edgeBlendIndex;
         copy.polygon = new Polygon(p.polygon.xpoints, p.polygon.ypoints, p.polygon.npoints);
@@ -3873,6 +3985,22 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 }
                 fw.append("hVar2 " + p.secondary_hue_variation + "\n");
                 fw.append("sVar2 " + p.secondary_sat_variation + "\n");
+                
+                
+                
+                fw.append("Color1HueVarIncrease " + ((p.hue_var_direction_increase)? "1" : "0") + "\n");
+                fw.append("Color1SatVarIncrease " + ((p.sat_var_direction_increase)? "1" : "0") + "\n");
+                fw.append("Color2HueVarIncrease " + ((p.sec_hue_var_direction_increase)? "1" : "0") + "\n");
+                fw.append("Color2SatVarIncrease " + ((p.sec_sat_var_direction_increase)? "1" : "0") + "\n");
+                fw.append("Color1SatVarOrigin " + p.var_origin + "\n");
+                fw.append("Color2SatVarOrigin " + p.secondary_var_origin + "\n");
+                fw.append("isGradient " + ((p.is_gradient_mode)? "1" : "0") + "\n");
+                fw.append("gradientRange " + p.gradient_range + "\n");
+                fw.append("originGradient " + p.gradient_origin + "\n");
+                
+                
+                
+                
                 fw.append("shadowComplement " + p.complement_threshold + "\n");
                 fw.append("edgeBlendIndex " + p.edgeBlendIndex + "\n");
                 fw.append("depth " + p.depth + "\n");
@@ -3983,6 +4111,19 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 fw.append("hVar2 " + p.secondary_hue_variation + "\n");
                 fw.append("sVar2 " + p.secondary_sat_variation + "\n");
 
+                fw.append("Color1HueVarIncrease " + ((p.hue_var_direction_increase)? "1" : "0") + "\n");
+                fw.append("Color1SatVarIncrease " + ((p.sat_var_direction_increase)? "1" : "0") + "\n");
+                fw.append("Color2HueVarIncrease " + ((p.sec_hue_var_direction_increase)? "1" : "0") + "\n");
+                fw.append("Color2SatVarIncrease " + ((p.sec_sat_var_direction_increase)? "1" : "0") + "\n");
+                fw.append("Color1SatVarOrigin " + p.var_origin + "\n");
+                fw.append("Color2SatVarOrigin " + p.secondary_var_origin + "\n");
+                fw.append("isGradient " + ((p.is_gradient_mode)? "1" : "0") + "\n");
+                fw.append("gradientRange " + p.gradient_range + "\n");
+                fw.append("originGradient " + p.gradient_origin + "\n");
+                
+                
+                
+                
                 fw.append("shadowComplement " + p.complement_threshold + "\n");
                 fw.append("edgeBlendIndex " + p.edgeBlendIndex + "\n");
                 fw.append("depth " + p.depth + "\n");
@@ -5130,6 +5271,64 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 next = reader.next();
             }
 
+           
+            
+            if (next.equals("Color1HueVarIncrease")) {
+                int Color1HueVarIncrease = reader.nextInt();
+                poly.hue_var_direction_increase = (Color1HueVarIncrease == 1);
+                next = reader.next();
+            }
+
+            if (next.equals("Color1SatVarIncrease")) {
+                int Color1SatVarIncrease = reader.nextInt();
+                poly.sat_var_direction_increase = (Color1SatVarIncrease == 1);
+                next = reader.next();
+            }
+            
+            if (next.equals("Color2HueVarIncrease")) {
+                int Color2HueVarIncrease = reader.nextInt();
+                poly.sec_hue_var_direction_increase = (Color2HueVarIncrease == 1);
+                next = reader.next();
+            }
+
+            if (next.equals("Color2SatVarIncrease")) {
+                int Color2SatVarIncrease = reader.nextInt();
+                poly.sec_sat_var_direction_increase = (Color2SatVarIncrease == 1);
+                next = reader.next();
+            }
+            
+            if (next.equals("Color1SatVarOrigin")) {
+                int Color1SatVarOrigin = reader.nextInt();
+                poly.secondary_hue_variation = Color1SatVarOrigin;
+                next = reader.next();
+            }
+
+            if (next.equals("Color2SatVarOrigin")) {
+                int Color2SatVarOrigin = reader.nextInt();
+                poly.secondary_sat_variation = Color2SatVarOrigin;
+                next = reader.next();
+            }
+            
+            if (next.equals("isGradient")) {
+                int isGradient = reader.nextInt();
+                poly.is_gradient_mode = isGradient==1;
+                next = reader.next();
+            }
+            if (next.equals("gradientRange")) {
+                int gradientRange = reader.nextInt();
+                poly.gradient_range = gradientRange;
+                next = reader.next();
+            }
+            if (next.equals("originGradient")) {
+                int originGradient = reader.nextInt();
+                poly.gradient_origin = originGradient;
+                next = reader.next();
+            }
+            
+            
+            
+            
+            
             if (next.equals("shadowComplement")) {
                 int shadowComplementThreshold = reader.nextInt();
                 poly.complement_threshold = shadowComplementThreshold;
@@ -6537,7 +6736,16 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 editorPanel.depthField.setText(clickedObject.depth + "");
 
                 editorPanel.complement_spinner.setValue(clickedObject.complement_threshold);
-                editorPanel.complement_slider.setValue(clickedObject.complement_threshold);
+                if (clickedObject.is_gradient_mode)
+                {
+                    editorPanel.complement_label.setText("gradient");
+                    editorPanel.complement_slider.setValue(clickedObject.gradient_range);
+                }
+                else
+                {
+                    editorPanel.complement_label.setText("secondary");
+                    editorPanel.complement_slider.setValue(clickedObject.complement_threshold);
+                }
                 editorPanel.edgeBlendList.setSelectedIndex(clickedObject.edgeBlendIndex);
                 editorPanel.idField.setText(clickedObject.id + "");
 
@@ -6551,7 +6759,8 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
                 editorPanel.sat_var_slider.setValue(0);
                 editorPanel.hue_variation_label.setText("hue variation <");
                 editorPanel.sat_variation_label.setText("sat variation <");
-                editorPanel.var_origin_slider.setValue(0);
+                editorPanel.var_origin_slider.setValue(128);
+                editorPanel.complement_label.setText("secondary");
                 editorPanel.depthField.setText("0");
                 editorPanel.idField.setText("NULL");
 
@@ -7562,6 +7771,11 @@ class MaskedObject {
     int var_origin = 128;
     int secondary_var_origin = 128;
     int edgeBlendIndex;
+    int gradient_origin = 128;
+    
+    boolean is_gradient_mode = false;
+    
+    int gradient_range = 128;
 
     public MaskedObject() {
         polygon = new Polygon();
