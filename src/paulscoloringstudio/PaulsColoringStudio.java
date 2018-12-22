@@ -5299,13 +5299,13 @@ public class PaulsColoringStudio extends JPanel implements MouseListener, KeyLis
             
             if (next.equals("Color1SatVarOrigin")) {
                 int Color1SatVarOrigin = reader.nextInt();
-                poly.secondary_hue_variation = Color1SatVarOrigin;
+                poly.var_origin = Color1SatVarOrigin;
                 next = reader.next();
             }
 
             if (next.equals("Color2SatVarOrigin")) {
                 int Color2SatVarOrigin = reader.nextInt();
-                poly.secondary_sat_variation = Color2SatVarOrigin;
+                poly.secondary_var_origin = Color2SatVarOrigin;
                 next = reader.next();
             }
             
